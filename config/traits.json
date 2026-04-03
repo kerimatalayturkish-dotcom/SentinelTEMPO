@@ -1,0 +1,55 @@
+{
+  "layers": [
+    {
+      "id": 0,
+      "name": "Background",
+      "options": [
+        { "id": "bg_blue", "name": "Blue", "file": "bg_blue.png" },
+        { "id": "bg_red", "name": "Red", "file": "bg_red.png" },
+        { "id": "bg_green", "name": "Green", "file": "bg_green.png" }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Body",
+      "options": [
+        { "id": "body_armor", "name": "Armor", "file": "body_armor.png" },
+        { "id": "body_robe", "name": "Robe", "file": "body_robe.png" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Head",
+      "options": [
+        { "id": "head_helmet", "name": "Helmet", "file": "head_helmet.png" },
+        { "id": "head_crown", "name": "Crown", "file": "head_crown.png" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Eyes",
+      "options": [
+        { "id": "eyes_laser", "name": "Laser", "file": "eyes_laser.png" },
+        { "id": "eyes_normal", "name": "Normal", "file": "eyes_normal.png" }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Accessories",
+      "options": [
+        { "id": "acc_wings", "name": "Wings", "file": "acc_wings.png" },
+        { "id": "acc_shield", "name": "Shield", "file": "acc_shield.png" },
+        { "id": "acc_none", "name": "None", "file": "acc_none.png" }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Color",
+      "options": [
+        { "id": "color_gold", "name": "Gold", "file": "color_gold.png" },
+        { "id": "color_silver", "name": "Silver", "file": "color_silver.png" },
+        { "id": "color_none", "name": "None", "file": "color_none.png" }
+      ]
+    }
+  ]
+}
