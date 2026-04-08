@@ -23,6 +23,16 @@
 # misc
 .DS_Store
 *.pem
+*.bak
+photo_*.jpg
+
+# local skill files (not served, keep private)
+/SKILL.md
+/SKILL-QUEST.md
+
+# research and planning notes
+NFT-LAUNCHPAD-PLAN.md
+TEMPO-*.md
 
 # debug
 npm-debug.log*
@@ -38,8 +48,17 @@ yarn-error.log*
 config/merkle-root.json
 config/merkle-proofs.json
 
+# old data files (migrated to PostgreSQL)
+data/
+
 # vercel
 .vercel
+
+# hardhat build artifacts
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/node_modules/
 
 # typescript
 *.tsbuildinfo

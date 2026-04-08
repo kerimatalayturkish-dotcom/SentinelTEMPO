@@ -1,0 +1,30 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:moderato": "hardhat run scripts/deploy.ts --network moderato",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network tempo",
+    "set-merkle-root:moderato": "hardhat run scripts/set-merkle-root.ts --network moderato",
+    "set-merkle-root:mainnet": "hardhat run scripts/set-merkle-root.ts --network tempo",
+    "set-minter:moderato": "hardhat run scripts/set-minter.ts --network moderato",
+    "set-minter:mainnet": "hardhat run scripts/set-minter.ts --network tempo",
+    "set-phase:moderato": "hardhat run scripts/set-phase.ts --network moderato"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.1.3",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.1.0",
+    "dotenv": "^17.4.0",
+    "ethers": "^6.16.0",
+    "hardhat": "^2.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}

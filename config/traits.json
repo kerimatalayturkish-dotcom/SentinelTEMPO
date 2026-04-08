@@ -1,54 +1,66 @@
 {
   "layers": [
     {
-      "id": 0,
+      "id": "background",
       "name": "Background",
+      "order": 0,
+      "required": true,
       "options": [
-        { "id": "bg_blue", "name": "Blue", "file": "bg_blue.png" },
-        { "id": "bg_red", "name": "Red", "file": "bg_red.png" },
-        { "id": "bg_green", "name": "Green", "file": "bg_green.png" }
+        { "id": "bg_blue", "name": "Blue", "file": "0-background/bg_blue.png" },
+        { "id": "bg_red", "name": "Red", "file": "0-background/bg_red.png" },
+        { "id": "bg_green", "name": "Green", "file": "0-background/bg_green.png" }
       ]
     },
     {
-      "id": 1,
+      "id": "body",
       "name": "Body",
+      "order": 1,
+      "required": true,
       "options": [
-        { "id": "body_armor", "name": "Armor", "file": "body_armor.png" },
-        { "id": "body_robe", "name": "Robe", "file": "body_robe.png" }
+        { "id": "body_armor", "name": "Armored", "file": "1-body/body_armor.png" },
+        { "id": "body_robe", "name": "Robe", "file": "1-body/body_robe.png" }
       ]
     },
     {
-      "id": 2,
+      "id": "head",
       "name": "Head",
+      "order": 2,
+      "required": true,
       "options": [
-        { "id": "head_helmet", "name": "Helmet", "file": "head_helmet.png" },
-        { "id": "head_crown", "name": "Crown", "file": "head_crown.png" }
+        { "id": "head_helmet", "name": "Helmet", "file": "2-head/head_helmet.png" },
+        { "id": "head_crown", "name": "Crown", "file": "2-head/head_crown.png" }
       ]
     },
     {
-      "id": 3,
+      "id": "eyes",
       "name": "Eyes",
+      "order": 3,
+      "required": true,
       "options": [
-        { "id": "eyes_laser", "name": "Laser", "file": "eyes_laser.png" },
-        { "id": "eyes_normal", "name": "Normal", "file": "eyes_normal.png" }
+        { "id": "eyes_laser", "name": "Laser", "file": "3-eyes/eyes_laser.png" },
+        { "id": "eyes_normal", "name": "Normal", "file": "3-eyes/eyes_normal.png" }
       ]
     },
     {
-      "id": 4,
+      "id": "accessories",
       "name": "Accessories",
+      "order": 4,
+      "required": false,
       "options": [
-        { "id": "acc_wings", "name": "Wings", "file": "acc_wings.png" },
-        { "id": "acc_shield", "name": "Shield", "file": "acc_shield.png" },
-        { "id": "acc_none", "name": "None", "file": "acc_none.png" }
+        { "id": "acc_wings", "name": "Wings", "file": "4-accessories/acc_wings.png" },
+        { "id": "acc_shield", "name": "Shield", "file": "4-accessories/acc_shield.png" },
+        { "id": "acc_none", "name": "None", "file": "4-accessories/acc_none.png" }
       ]
     },
     {
-      "id": 5,
-      "name": "Color",
+      "id": "color",
+      "name": "Color Overlay",
+      "order": 5,
+      "required": false,
       "options": [
-        { "id": "color_gold", "name": "Gold", "file": "color_gold.png" },
-        { "id": "color_silver", "name": "Silver", "file": "color_silver.png" },
-        { "id": "color_none", "name": "None", "file": "color_none.png" }
+        { "id": "color_gold", "name": "Gold", "file": "5-color/color_gold.png" },
+        { "id": "color_silver", "name": "Silver", "file": "5-color/color_silver.png" },
+        { "id": "color_none", "name": "None", "file": "5-color/color_none.png" }
       ]
     }
   ]

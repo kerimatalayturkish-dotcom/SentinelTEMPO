@@ -11,6 +11,7 @@ export function getServerEnv() {
     feePayerKey: requireEnv('FEE_PAYER_KEY') as `0x${string}`,
     treasuryWallet: requireEnv('NFT_TREASURY_WALLET') as `0x${string}`,
     irysPrivateKey: requireEnv('IRYS_PRIVATE_KEY') as `0x${string}`,
-    irysNode: requireEnv('IRYS_NODE'),
+    irysRpcUrl: requireEnv('IRYS_RPC_URL'),
+    irysNetwork: process.env.IRYS_NETWORK || 'devnet',
   }
 }
