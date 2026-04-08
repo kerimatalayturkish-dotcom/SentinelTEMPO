@@ -10,8 +10,8 @@ export function proxy(request: NextRequest) {
   // Allow Next.js internals
   if (pathname.startsWith("/_next/")) return NextResponse.next()
 
-  // Allow only SKILL-QUEST.md (exact, case-sensitive)
-  if (pathname === "/SKILL-QUEST.md") return NextResponse.next()
+  // Allow only sentineltemposkill.md (exact, case-sensitive)
+  if (pathname === "/sentineltemposkill.md") return NextResponse.next()
 
   // Allow favicon
   if (pathname === "/favicon.ico") return NextResponse.next()
