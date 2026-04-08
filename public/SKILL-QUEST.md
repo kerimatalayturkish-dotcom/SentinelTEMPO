@@ -3,26 +3,26 @@ name: sentinel-tempo-quest
 description: >
   Complete the SentinelTEMPO Agent Quest to get whitelisted.
   Post a verification tweet from your X account, prove ownership,
-  and register your Tempo wallet address. No payment required â€” all
+  and register your Tempo wallet address. No payment required -- all
   endpoints are free. Includes Twitter/X setup instructions if the
   agent does not already have tweet access.
 ---
 
-# SentinelTEMPO â€” Agent Quest (Whitelist Registration)
+# SentinelTEMPO -- Agent Quest (Whitelist Registration)
 
 Complete a quest to register your Tempo wallet address for the
 SentinelTEMPO whitelist. The quest verifies you control a Twitter/X account
 and links it to a Tempo wallet.
 
-**No payment or crypto is needed â€” all quest endpoints are free.**
+**No payment or crypto is needed -- all quest endpoints are free.**
 
 ---
 
-## IMPORTANT: Before Starting â€” Twitter/X Access Check (Phase 0)
+## IMPORTANT: Before Starting -- Twitter/X Access Check (Phase 0)
 
 Before running the quest, you **must** be able to post tweets. Run this check first.
 
-### Step 0.1 â€” Detect your operating system
+### Step 0.1 -- Detect your operating system
 
 Determine the OS to use the correct paths:
 
@@ -31,7 +31,7 @@ Determine the OS to use the correct paths:
 | **macOS / Linux** | `~/.openclaw/workspace/twitter-quick/` |
 | **Windows** | `%USERPROFILE%\.openclaw\workspace\twitter-quick\` |
 
-### Step 0.2 â€” Check if `twitter-quick` workspace exists
+### Step 0.2 -- Check if `twitter-quick` workspace exists
 
 Look for the `.env` file inside the `twitter-quick` workspace folder:
 
@@ -39,18 +39,18 @@ Look for the `.env` file inside the `twitter-quick` workspace folder:
 - **Windows**: Check if `%USERPROFILE%\.openclaw\workspace\twitter-quick\.env` exists
 
 **If the `.env` file exists AND contains non-empty values for all 4 keys** (`TWITTER_API_KEY`, `TWITTER_API_KEY_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`):
-â†’ **Skip to [Quest Overview](#quest-overview)** and begin the quest.
+-> **Skip to [Quest Overview](#quest-overview)** and begin the quest.
 
 **If the `.env` file does NOT exist or is missing keys:**
-â†’ Continue to Step 0.3 below.
+-> Continue to Step 0.3 below.
 
-### Step 0.3 â€” Guide the user to get Twitter/X API credentials
+### Step 0.3 -- Guide the user to get Twitter/X API credentials
 
 Tell the user:
 
 > I need Twitter/X API credentials to post tweets on your behalf for this quest.
 > You'll need to create a free developer account and generate 4 keys.
-> This is a one-time setup â€” the keys don't expire.
+> This is a one-time setup -- the keys don't expire.
 
 **Instructions to give the user:**
 
@@ -58,21 +58,21 @@ Tell the user:
 2. If you don't have a developer account, click **"Sign up for Free Account"**
 3. Complete the required fields (describe your use: "AI agent posting tweets")
 4. Once in the Developer Portal, go to **Projects & Apps** in the sidebar
-5. **Create a new Project** â†’ give it any name (e.g. "My AI Agent")
-6. **Create an App** inside that project â†’ give it any name
-7. Go to the App's **Settings** tab â†’ **User authentication settings** â†’ click **Set up**
-8. Set **App permissions** to **Read and Write** â† this is critical
+5. **Create a new Project** -> give it any name (e.g. "My AI Agent")
+6. **Create an App** inside that project -> give it any name
+7. Go to the App's **Settings** tab -> **User authentication settings** -> click **Set up**
+8. Set **App permissions** to **Read and Write** <- this is critical
 9. Set **Type of App** to **Web App, Automated App or Bot**
 10. For Callback URL and Website URL, enter `https://example.com` (placeholder, not used)
 11. Click **Save**
 12. Go to the **Keys and Tokens** tab
-13. Under **Consumer Keys**, click **Regenerate** â†’ copy **API Key** and **API Key Secret**
-14. Under **Authentication Tokens**, click **Generate** â†’ copy **Access Token** and **Access Token Secret**
+13. Under **Consumer Keys**, click **Regenerate** -> copy **API Key** and **API Key Secret**
+14. Under **Authentication Tokens**, click **Generate** -> copy **Access Token** and **Access Token Secret**
 15. Send me all 4 values
 
 **Tell the user these 4 keys are OAuth 1.0a credentials. They never expire and allow tweeting from their account.**
 
-### Step 0.4 â€” Create the `twitter-quick` workspace
+### Step 0.4 -- Create the `twitter-quick` workspace
 
 Once the user provides the 4 keys, set up the workspace.
 
@@ -92,7 +92,7 @@ Set-Location "$env:USERPROFILE\.openclaw\workspace\twitter-quick"
 
 **If you do NOT have exec/shell access**, tell the user to create the folder manually at the path shown above and create the files described below.
 
-### Step 0.5 â€” Create `package.json`
+### Step 0.5 -- Create `package.json`
 
 Write this file inside the `twitter-quick` folder:
 
@@ -109,7 +109,7 @@ Write this file inside the `twitter-quick` folder:
 }
 ```
 
-### Step 0.6 â€” Create `tweet.js`
+### Step 0.6 -- Create `tweet.js`
 
 Write this file inside the `twitter-quick` folder:
 
@@ -181,7 +181,7 @@ console.log('Tweet posted OK. Response:');
 console.log(JSON.stringify(body));
 ```
 
-### Step 0.7 â€” Create `.env`
+### Step 0.7 -- Create `.env`
 
 Write the `.env` file using the 4 keys the user provided:
 
@@ -192,7 +192,7 @@ TWITTER_ACCESS_TOKEN=<user's Access Token>
 TWITTER_ACCESS_TOKEN_SECRET=<user's Access Token Secret>
 ```
 
-### Step 0.8 â€” Install dependencies
+### Step 0.8 -- Install dependencies
 
 Run this inside the `twitter-quick` folder:
 
@@ -200,14 +200,14 @@ Run this inside the `twitter-quick` folder:
 npm install
 ```
 
-### Step 0.9 â€” Test tweet (and delete)
+### Step 0.9 -- Test tweet (and delete)
 
 Post a test tweet to confirm everything works:
 
 #### macOS / Linux:
 ```bash
 cd ~/.openclaw/workspace/twitter-quick
-node tweet.js "Testing my AI agent setup â€” please ignore this tweet."
+node tweet.js "Testing my AI agent setup -- please ignore this tweet."
 ```
 
 #### Windows (PowerShell):
@@ -221,7 +221,7 @@ node tweet.js "Testing my AI agent setup -- please ignore this tweet."
 Now **delete the test tweet** to keep the user's timeline clean. Use the tweet ID from the response:
 
 ```javascript
-// delete-tweet.js â€” run with: node delete-tweet.js <TWEET_ID>
+// delete-tweet.js -- run with: node delete-tweet.js <TWEET_ID>
 import 'dotenv/config';
 import fetch from 'node-fetch';
 import OAuth from 'oauth-1.0a';
@@ -249,15 +249,15 @@ else { console.error('Delete failed:', resp.status, body); }
 You can create this as `delete-tweet.js` in the same folder, run it with the tweet ID, then delete the script file.
 
 **If the test tweet fails:**
-- `403 Forbidden` â†’ App permissions are not set to "Read and Write". User must go to developer.x.com â†’ App Settings â†’ User authentication â†’ change to Read and Write, then regenerate all 4 keys.
-- `401 Unauthorized` â†’ Keys are wrong. Ask user to double-check and re-paste.
-- `429 Too Many Requests` â†’ Rate limited. Wait a minute and retry.
+- `403 Forbidden` -> App permissions are not set to "Read and Write". User must go to developer.x.com -> App Settings -> User authentication -> change to Read and Write, then regenerate all 4 keys.
+- `401 Unauthorized` -> Keys are wrong. Ask user to double-check and re-paste.
+- `429 Too Many Requests` -> Rate limited. Wait a minute and retry.
 
-### Step 0.10 â€” Twitter setup complete
+### Step 0.10 -- Twitter setup complete
 
 Once the test tweet posts and deletes successfully, tell the user:
 
-> âœ… Twitter setup complete! Your AI agent can now tweet from your account.
+> Twitter setup complete! Your AI agent can now tweet from your account.
 > Proceeding to the SentinelTEMPO whitelist quest...
 
 Now proceed to the quest below.
@@ -271,7 +271,7 @@ Now proceed to the quest below.
 | Blockchain | Tempo (EVM-compatible L1) |
 | Chain ID | 4217 |
 | NFT Contract | `0x8e8e6e2CcE41Ea982bc730dB489e913766F16e78` |
-| Collection | SentinelTEMPO â€” 10,000 generative NFTs |
+| Collection | SentinelTEMPO -- 10,000 generative NFTs |
 
 ---
 
@@ -289,10 +289,10 @@ All quest endpoints are under `/api/quest/`.
 
 The quest has 4 steps, executed **in order**:
 
-1. **Start** â€” Register your X/Twitter handle â†’ receive a unique verification code
-2. **Tweet** â€” Post a public tweet containing the code and "SentinelTEMPO"
-3. **Verify** â€” Submit the tweet URL for automated verification
-4. **Complete** â€” Submit your Tempo wallet address for the whitelist
+1. **Start** -- Register your X/Twitter handle -> receive a unique verification code
+2. **Tweet** -- Post a public tweet containing the code and "SentinelTEMPO"
+3. **Verify** -- Submit the tweet URL for automated verification
+4. **Complete** -- Submit your Tempo wallet address for the whitelist
 
 ---
 
@@ -307,7 +307,7 @@ The quest has 4 steps, executed **in order**:
 
 ## Endpoints
 
-### 1. GET /api/quest/info â€” Quest Instructions (free)
+### 1. GET /api/quest/info -- Quest Instructions (free)
 
 Returns structured JSON describing the full quest flow. Read this first.
 
@@ -332,7 +332,7 @@ curl -s https://sentineltempo.onrender.com/api/quest/info
 
 ---
 
-### 2. POST /api/quest/start â€” Begin the Quest (free)
+### 2. POST /api/quest/start -- Begin the Quest (free)
 
 Register your Twitter/X handle to start. Returns a `questId` and a unique `code`.
 
@@ -369,7 +369,7 @@ curl -s -X POST -H "Content-Type: application/json" \
 }
 ```
 
-> **IMPORTANT:** The questId and code are only returned once â€” in the original `/start` response. Save them immediately.
+> **IMPORTANT:** The questId and code are only returned once -- in the original `/start` response. Save them immediately.
 
 ---
 
@@ -379,23 +379,25 @@ Post a **public** tweet from the registered handle. The tweet **must contain**:
 - The exact verification code (e.g. `SQ-1A2B3C4D`)
 - The word `SentinelTEMPO`
 
-**Example tweet text:**
+**Required tweet format:**
 ```
-I just completed a quest for SentinelTEMPO â€” the first agentic NFT collection on Tempo Chain ðŸ”´â›“ï¸ SQ-1A2B3C4D #SentinelTEMPO
+I just completed a quest for SentinelTEMPO -- the first agentic NFT collection on Tempo Chain [YOUR_CODE] @SentinelTEMPO
 ```
+
+Replace `[YOUR_CODE]` with your actual verification code (e.g. `SQ-1A2B3C4D`).
 
 **To post the tweet**, use the `tweet.js` tool set up in Phase 0:
 
 macOS / Linux:
 ```bash
 cd ~/.openclaw/workspace/twitter-quick
-node tweet.js "I just completed a quest for SentinelTEMPO â€” the first agentic NFT collection on Tempo Chain ðŸ”´â›“ï¸ SQ-1A2B3C4D #SentinelTEMPO"
+node tweet.js "I just completed a quest for SentinelTEMPO -- the first agentic NFT collection on Tempo Chain SQ-1A2B3C4D @SentinelTEMPO"
 ```
 
 Windows (PowerShell):
 ```powershell
 Set-Location "$env:USERPROFILE\.openclaw\workspace\twitter-quick"
-node tweet.js "I just completed a quest for SentinelTEMPO -- the first agentic NFT collection on Tempo Chain SQ-1A2B3C4D #SentinelTEMPO"
+node tweet.js "I just completed a quest for SentinelTEMPO -- the first agentic NFT collection on Tempo Chain SQ-1A2B3C4D @SentinelTEMPO"
 ```
 
 The response contains the tweet `id`. Construct the tweet URL as:
@@ -407,7 +409,7 @@ Save this URL for the next step.
 
 ---
 
-### 4. POST /api/quest/verify â€” Verify the Tweet (free)
+### 4. POST /api/quest/verify -- Verify the Tweet (free)
 
 Submit the tweet URL for automated verification. The server checks:
 - Tweet exists and is public (via X oEmbed API)
@@ -452,7 +454,7 @@ curl -s -X POST -H "Content-Type: application/json" \
 
 ---
 
-### 5. POST /api/quest/complete â€” Submit Wallet Address (free)
+### 5. POST /api/quest/complete -- Submit Wallet Address (free)
 
 After tweet verification, submit your Tempo wallet address to register for the whitelist.
 
@@ -501,17 +503,17 @@ curl -s -X POST -H "Content-Type: application/json" \
 
 ### When a user asks to join the whitelist / complete the quest:
 
-**Phase 0 â€” Check Twitter access** (see above):
+**Phase 0 -- Check Twitter access** (see above):
 - Check if `twitter-quick` workspace + `.env` exist
-- If not â†’ guide user through credential setup (Steps 0.3â€“0.9)
-- If yes â†’ proceed
+- If not -> guide user through credential setup (Steps 0.3-0.9)
+- If yes -> proceed
 
-**Step 1 â€” Read quest info:**
+**Step 1 -- Read quest info:**
 ```bash
 curl -s https://sentineltempo.onrender.com/api/quest/info
 ```
 
-**Step 2 â€” Ask for Twitter handle** and start quest:
+**Step 2 -- Ask for Twitter handle** and start quest:
 ```bash
 curl -s -X POST -H "Content-Type: application/json" \
   -d '{"twitter": "@theirhandle"}' \
@@ -519,30 +521,32 @@ curl -s -X POST -H "Content-Type: application/json" \
 ```
 Save the `questId` and `code` from the response.
 
-**Step 3 â€” Post the tweet** using the `twitter-quick` tool:
+**Step 3 -- Post the tweet** using the `twitter-quick` tool:
 
 Navigate to the `twitter-quick` workspace and run:
 ```bash
-node tweet.js "<tweet text containing the code and SentinelTEMPO>"
+node tweet.js "I just completed a quest for SentinelTEMPO -- the first agentic NFT collection on Tempo Chain [CODE] @SentinelTEMPO"
 ```
+Replace `[CODE]` with the actual verification code from Step 2.
+
 Extract the tweet `id` from the response and construct the URL:
 `https://x.com/<handle>/status/<tweet_id>`
 
-**Step 4 â€” Verify the tweet:**
+**Step 4 -- Verify the tweet:**
 ```bash
 curl -s -X POST -H "Content-Type: application/json" \
   -d '{"questId": "...", "tweetUrl": "https://x.com/handle/status/123"}' \
   https://sentineltempo.onrender.com/api/quest/verify
 ```
 
-**Step 5 â€” Ask for Tempo wallet address** and complete:
+**Step 5 -- Ask for Tempo wallet address** and complete:
 ```bash
 curl -s -X POST -H "Content-Type: application/json" \
   -d '{"questId": "...", "tempoAddress": "0xWALLET"}' \
   https://sentineltempo.onrender.com/api/quest/complete
 ```
 
-**Step 6 â€” Confirm to user** that they are registered for the whitelist.
+**Step 6 -- Confirm to user** that they are registered for the whitelist.
 
 ---
 
@@ -551,18 +555,18 @@ curl -s -X POST -H "Content-Type: application/json" \
 | HTTP Code | Meaning | What to Do |
 |---|---|---|
 | 400 | Bad request / missing fields | Check the required body fields |
-| 404 | Quest not found | Invalid questId â€” start a new quest |
+| 404 | Quest not found | Invalid questId -- start a new quest |
 | 409 | Duplicate handle or address | Handle already has a quest, or address already registered |
 | 422 | Tweet verification failed | Tweet is not public, wrong handle, or missing code |
-| 429 | Rate limited | Too many requests â€” wait and retry after the `Retry-After` header value |
+| 429 | Rate limited | Too many requests -- wait and retry after the `Retry-After` header value |
 
 ---
 
-## User Intent â†’ Action Mapping
+## User Intent -> Action Mapping
 
 | User says | What to do |
 |---|---|
-| "join whitelist" / "get whitelisted" | Run the full quest flow (Steps 1â€“6 above) |
+| "join whitelist" / "get whitelisted" | Run the full quest flow (Steps 1-6 above) |
 | "start quest" / "begin quest" | Call `POST /api/quest/start` with their Twitter handle |
 | "verify my tweet" | Call `POST /api/quest/verify` with their questId + tweet URL |
 | "register my wallet" / "submit address" | Call `POST /api/quest/complete` with questId + tempoAddress |
@@ -574,10 +578,10 @@ curl -s -X POST -H "Content-Type: application/json" \
 
 **Quest started:**
 ```
-ðŸ”´ SentinelTEMPO Quest Started!
+SentinelTEMPO Quest Started!
 
-ðŸ¦ Handle: @myhandle
-ðŸ”‘ Code: SQ-1A2B3C4D
+Handle: @myhandle
+Code: SQ-1A2B3C4D
 
 Next: Post a public tweet containing your code and "SentinelTEMPO",
 then come back with the tweet URL.
@@ -585,7 +589,7 @@ then come back with the tweet URL.
 
 **Tweet verified:**
 ```
-âœ… Tweet Verified!
+Tweet Verified!
 
 Your tweet has been confirmed. Now submit your Tempo wallet address
 to complete the quest and register for the whitelist.
@@ -593,11 +597,11 @@ to complete the quest and register for the whitelist.
 
 **Quest complete:**
 ```
-ðŸŽ‰ Quest Complete!
+Quest Complete!
 
-ðŸ¦ Twitter: @myhandle
-ðŸ‘› Tempo Address: 0x1234...5678
-ðŸ“… Completed: 2026-04-04
+Twitter: @myhandle
+Tempo Address: 0x1234...5678
+Completed: 2026-04-04
 
 Your address is registered for the SentinelTEMPO whitelist!
 ```
