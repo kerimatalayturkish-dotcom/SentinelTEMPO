@@ -48,9 +48,9 @@ yarn-error.log*
 .env*
 !.env.example
 
-# merkle generated files
-config/merkle-root.json
-config/merkle-proofs.json
+# merkle generated files (placeholders committed, regenerated for mint phase)
+# config/merkle-root.json
+# config/merkle-proofs.json
 
 # old data files (migrated to PostgreSQL)
 data/
