@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
           "(3) optionally mention @SentinelTEMPO. " +
           "The tweet must be public.",
         example_tweet:
-          "I just completed a quest for SentinelTEMPO — the first agentic NFT collection on Tempo Chain 🔴⛓️ [YOUR_CODE] #SentinelTEMPO",
+          "I just completed a quest for SentinelTEMPO -- the first agentic NFT collection on Tempo Chain [YOUR_CODE] @SentinelTEMPO",
       },
       {
         step: 3,
