@@ -3,8 +3,7 @@ import { Pool } from "pg"
 const isProduction = process.env.NODE_ENV === "production"
 
 const pool = new Pool({
-  connectionString:
-    process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/sentinel_tempo",
+  connectionString: process.env.DATABASE_URL,
   ...(isProduction && {
     ssl: { rejectUnauthorized: false },
   }),

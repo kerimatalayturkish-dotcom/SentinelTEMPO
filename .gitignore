@@ -33,6 +33,10 @@ photo_*.jpg
 # research and planning notes
 NFT-LAUNCHPAD-PLAN.md
 TEMPO-*.md
+BUILD-STEPS.md
+DEV-GUIDE.md
+SENTINEL-TEMPO-PLAN.md
+SETUP-GUIDE.md
 
 # debug
 npm-debug.log*
