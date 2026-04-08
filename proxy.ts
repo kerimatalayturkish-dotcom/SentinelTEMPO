@@ -7,16 +7,17 @@ export function proxy(request: NextRequest) {
   // Allow API routes
   if (pathname.startsWith("/api/")) return NextResponse.next()
 
-  // Allow static files from public/ (SKILL-QUEST.md, images, etc.)
-  if (pathname.includes(".")) return NextResponse.next()
-
   // Allow Next.js internals
   if (pathname.startsWith("/_next/")) return NextResponse.next()
 
-  // Block all page routes — redirect to SKILL-QUEST.md
-  const url = request.nextUrl.clone()
-  url.pathname = "/SKILL-QUEST.md"
-  return NextResponse.redirect(url, 308)
+  // Allow only SKILL-QUEST.md (exact, case-sensitive)
+  if (pathname === "/SKILL-QUEST.md") return NextResponse.next()
+
+  // Allow favicon
+  if (pathname === "/favicon.ico") return NextResponse.next()
+
+  // Block everything else with a plain 404
+  return new NextResponse("404 Not Found", { status: 404, headers: { "Content-Type": "text/plain" } })
 }
 
 export const config = {
