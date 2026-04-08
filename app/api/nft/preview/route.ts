@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   const imageBuffer = await composeImage(traits)
 
-  return new NextResponse(imageBuffer, {
+  return new NextResponse(new Uint8Array(imageBuffer), {
     headers: {
       "Content-Type": "image/png",
       "Cache-Control": "public, max-age=60",
