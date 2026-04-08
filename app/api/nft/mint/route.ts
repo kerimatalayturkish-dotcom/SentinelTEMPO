@@ -21,7 +21,7 @@ function createMppx() {
           feePayer: env.feePayerKey
             ? privateKeyToAccount(env.feePayerKey)
             : undefined,
-          testnet: true,
+          testnet: false,
         }),
       ],
     }),

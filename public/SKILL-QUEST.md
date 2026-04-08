@@ -269,7 +269,7 @@ Now proceed to the quest below.
 | Field | Value |
 |---|---|
 | Blockchain | Tempo (EVM-compatible L1) |
-| Chain ID | 42431 |
+| Chain ID | 4217 |
 | NFT Contract | `0x8e8e6e2CcE41Ea982bc730dB489e913766F16e78` |
 | Collection | SentinelTEMPO â€” 10,000 generative NFTs |
 

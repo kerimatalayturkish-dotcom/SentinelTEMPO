@@ -15,7 +15,7 @@ export function Footer() {
             𝕏
           </a>
           <a
-            href={`${process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explore.testnet.tempo.xyz"}/address/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}`}
+            href={`${process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explore.tempo.xyz"}/address/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}`}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-sentinel transition-colors"

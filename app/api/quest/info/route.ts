@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       },
     ],
     contract: CONTRACT_ADDRESS,
-    chain: "Tempo Moderato Testnet (chain ID 42431)",
+    chain: "Tempo Mainnet (chain ID 4217)",
     website: APP_URL,
     rules: [
       "One quest per Twitter handle",

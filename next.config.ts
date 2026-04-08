@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://gateway.irys.xyz https://arweave.net",
-              "connect-src 'self' https://rpc.moderato.tempo.xyz https://rpc.tempo.xyz wss://rpc.moderato.tempo.xyz wss://rpc.tempo.xyz https://publish.twitter.com https://gateway.irys.xyz",
+              "connect-src 'self' https://rpc.tempo.xyz wss://rpc.tempo.xyz https://publish.twitter.com https://gateway.irys.xyz",
               "frame-ancestors 'none'",
             ].join("; "),
           },

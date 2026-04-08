@@ -70,7 +70,7 @@ export default function NFTDetailPage() {
     )
   }
 
-  const explorerUrl = process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explore.testnet.tempo.xyz"
+  const explorerUrl = process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explore.tempo.xyz"
 
   return (
     <main className="container mx-auto max-w-4xl p-6">
