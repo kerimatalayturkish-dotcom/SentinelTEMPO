@@ -298,6 +298,7 @@ The quest has 4 steps, executed **in order**:
 
 ## Rules
 
+- Your Twitter/X account must have **at least 50 followers** to qualify
 - One quest per Twitter handle
 - One Tempo address per quest (no duplicate addresses)
 - The tweet must be **public** and remain posted
@@ -366,6 +367,22 @@ curl -s -X POST -H "Content-Type: application/json" \
 {
   "error": "This Twitter handle already has a quest. If this is you, use the questId from your original /start response.",
   "hint": "Submit your tweet URL to POST /api/quest/verify."
+}
+```
+
+**Not enough followers (403):**
+```json
+{
+  "error": "Your Twitter account needs at least 50 followers to qualify for the whitelist.",
+  "your_followers": 12,
+  "required": 50
+}
+```
+
+**Twitter account not found (400):**
+```json
+{
+  "error": "Twitter account not found. Make sure your handle is correct."
 }
 ```
 

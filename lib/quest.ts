@@ -25,8 +25,10 @@ function rowToEntry(row: Record<string, unknown>): QuestEntry {
   }
 }
 
+const CODE_PREFIX = process.env.QUEST_CODE_PREFIX ?? "S2"
+
 export function generateCode(): string {
-  return "SQ-" + crypto.randomBytes(4).toString("hex").toUpperCase()
+  return CODE_PREFIX + "-" + crypto.randomBytes(4).toString("hex").toUpperCase()
 }
 
 export async function findByQuestId(questId: string): Promise<QuestEntry | undefined> {

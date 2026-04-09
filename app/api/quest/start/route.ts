@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { findByTwitter, createEntry } from "@/lib/quest"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
+import { lookupFollowers, TwitterLookupError } from "@/lib/twitter"
+
+const MIN_FOLLOWERS = Number(process.env.MIN_FOLLOWER_COUNT ?? "50")
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +42,35 @@ export async function POST(req: NextRequest) {
             : "Submit your tweet URL to POST /api/quest/verify.",
         },
         { status: 409 }
+      )
+    }
+
+    // Check follower count
+    let followerCount: number
+    try {
+      const twitterUser = await lookupFollowers(handle)
+      followerCount = twitterUser.followers_count
+    } catch (err) {
+      if (err instanceof TwitterLookupError) {
+        return NextResponse.json(
+          { error: err.message },
+          { status: err.status === 429 ? 429 : 400 }
+        )
+      }
+      return NextResponse.json(
+        { error: "Unable to verify Twitter account. Please try again later." },
+        { status: 503 }
+      )
+    }
+
+    if (followerCount < MIN_FOLLOWERS) {
+      return NextResponse.json(
+        {
+          error: `Your Twitter account needs at least ${MIN_FOLLOWERS} followers to qualify for the whitelist.`,
+          your_followers: followerCount,
+          required: MIN_FOLLOWERS,
+        },
+        { status: 403 }
       )
     }
 
