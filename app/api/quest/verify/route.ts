@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { findByQuestId, updateEntry, verifyTweetViaOEmbed } from "@/lib/quest"
+import { findByQuestId, updateEntry, verifyTweetViaOEmbed, findChallengeByQuest } from "@/lib/quest"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
@@ -42,6 +42,24 @@ export async function POST(req: NextRequest) {
           body: { questId: entry.questId, tempoAddress: "0x..." },
         },
       })
+    }
+
+    // Phase 3: require math challenge solved before verification
+    const phase = (process.env.QUEST_CODE_PREFIX ?? "S2").toUpperCase()
+    if (phase === "S3") {
+      const challenge = await findChallengeByQuest(questId)
+      if (!challenge || !challenge.solved) {
+        return NextResponse.json(
+          {
+            error: "Math challenge not solved. Complete POST /api/quest/challenge/start first.",
+            next: {
+              action: "POST /api/quest/challenge/start",
+              body: { questId },
+            },
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Verify via oEmbed

@@ -1,6 +1,97 @@
 import crypto from "crypto"
 import pool from "./db"
 
+// ─── Challenge (Phase 3) types ─────────────────────────────────────
+
+export interface ChallengeRow {
+  challengeId: string
+  questId: string
+  seed: number
+  answers: string[]
+  attempts: number
+  maxAttempts: number
+  solved: boolean
+  finalAnswer: string | null
+  lockedOut: boolean
+  expiresAt: string
+  createdAt: string
+  solvedAt: string | null
+}
+
+function rowToChallenge(row: Record<string, unknown>): ChallengeRow {
+  return {
+    challengeId: row.challenge_id as string,
+    questId: row.quest_id as string,
+    seed: Number(row.seed),
+    answers: row.answers as string[],
+    attempts: row.attempts as number,
+    maxAttempts: row.max_attempts as number,
+    solved: row.solved as boolean,
+    finalAnswer: (row.final_answer as string) || null,
+    lockedOut: row.locked_out as boolean,
+    expiresAt: (row.expires_at as Date).toISOString(),
+    createdAt: (row.created_at as Date).toISOString(),
+    solvedAt: row.solved_at ? (row.solved_at as Date).toISOString() : null,
+  }
+}
+
+// ─── Challenge DB operations ───────────────────────────────────────
+
+export async function createChallenge(
+  questId: string,
+  seed: number,
+  answers: string[],
+  expiresAt: Date
+): Promise<ChallengeRow> {
+  const { rows } = await pool.query(
+    `INSERT INTO quest_challenges (quest_id, seed, answers, expires_at)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [questId, seed, JSON.stringify(answers), expiresAt]
+  )
+  return rowToChallenge(rows[0])
+}
+
+export async function findChallengeByQuest(questId: string): Promise<ChallengeRow | undefined> {
+  const { rows } = await pool.query(
+    "SELECT * FROM quest_challenges WHERE quest_id = $1",
+    [questId]
+  )
+  return rows[0] ? rowToChallenge(rows[0]) : undefined
+}
+
+export async function incrementChallengeAttempts(challengeId: string): Promise<ChallengeRow> {
+  const { rows } = await pool.query(
+    `UPDATE quest_challenges
+     SET attempts = attempts + 1,
+         locked_out = CASE WHEN attempts + 1 >= max_attempts THEN TRUE ELSE FALSE END
+     WHERE challenge_id = $1
+     RETURNING *`,
+    [challengeId]
+  )
+  return rowToChallenge(rows[0])
+}
+
+export async function markChallengeSolved(
+  challengeId: string,
+  finalAnswer: string
+): Promise<ChallengeRow> {
+  const { rows } = await pool.query(
+    `UPDATE quest_challenges
+     SET solved = TRUE, final_answer = $2, solved_at = NOW()
+     WHERE challenge_id = $1
+     RETURNING *`,
+    [challengeId, finalAnswer]
+  )
+  return rowToChallenge(rows[0])
+}
+
+export async function deleteChallenge(questId: string): Promise<void> {
+  await pool.query("DELETE FROM quest_challenges WHERE quest_id = $1", [questId])
+}
+
+// ─── Quest types ───────────────────────────────────────────────────
+
 export interface QuestEntry {
   questId: string
   twitter: string

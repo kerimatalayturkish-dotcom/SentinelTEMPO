@@ -76,10 +76,32 @@ export async function POST(req: NextRequest) {
 
     const entry = await createEntry(handle)
 
+    const phase = (process.env.QUEST_CODE_PREFIX ?? "S2").toUpperCase()
+
+    // Phase 3: direct to math challenge before tweet
+    if (phase === "S3") {
+      return NextResponse.json({
+        questId: entry.questId,
+        code: entry.code,
+        twitter: entry.twitter,
+        phase: "S3",
+        message:
+          `Quest started (Phase 3)! First, solve the math challenge via POST /api/quest/challenge/start. ` +
+          `After solving, post a public tweet from ${entry.twitter} containing the code "${entry.code}" ` +
+          `and your finalAnswer. Then verify via POST /api/quest/verify.`,
+        next: {
+          action: "POST /api/quest/challenge/start",
+          body: { questId: entry.questId },
+        },
+      })
+    }
+
+    // Phase 2 (default): direct to tweet
     return NextResponse.json({
       questId: entry.questId,
       code: entry.code,
       twitter: entry.twitter,
+      phase: phase,
       message:
         `Quest started! Now post a public tweet from ${entry.twitter} containing the code "${entry.code}" ` +
         `and the word "SentinelTEMPO". Then submit the tweet URL to POST /api/quest/verify.`,

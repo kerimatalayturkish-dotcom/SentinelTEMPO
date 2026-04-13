@@ -38,6 +38,9 @@ DEV-GUIDE.md
 SENTINEL-TEMPO-PLAN.md
 SETUP-GUIDE.md
 AI-TOKEN-PROJECT-RESEARCH.md
+OPENCLAW-RENDER-RESEARCH.md
+QUEST-API.md
+monitor.ps1
 
 # debug
 npm-debug.log*
@@ -55,6 +58,9 @@ yarn-error.log*
 
 # old data files (migrated to PostgreSQL)
 data/
+
+# database backups (contain sensitive data)
+backups/
 
 # vercel
 .vercel
