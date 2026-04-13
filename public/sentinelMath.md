@@ -1,6 +1,6 @@
 # SentinelTEMPO — Phase 3 Whitelist Quest (Agent API)
 
-> **Base URL:** `{{BASE_URL}}`
+> **Base URL:** `https://sentineltempo.onrender.com`
 > **Format:** All endpoints accept/return JSON. Use `Content-Type: application/json`.
 
 ---
