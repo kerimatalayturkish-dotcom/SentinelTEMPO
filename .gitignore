@@ -29,6 +29,7 @@ photo_*.jpg
 # local skill files (not served, keep private)
 /SKILL.md
 /SKILL-QUEST.md
+public/sentineltemposkill.md
 
 # research and planning notes
 NFT-LAUNCHPAD-PLAN.md
@@ -59,8 +60,21 @@ yarn-error.log*
 # old data files (migrated to PostgreSQL)
 data/
 
-# database backups (contain sensitive data)
+# database backups and exports (contain sensitive data)
 backups/
+db_*.txt
+keep_ids.txt
+
+# whitelist files (private)
+White lists/
+
+# research and VPS notes
+RAG-*.md
+commandsVPS.md
+
+# temp scripts
+tmp_*.py
+scripts/monitor-*.ps1
 
 # vercel
 .vercel

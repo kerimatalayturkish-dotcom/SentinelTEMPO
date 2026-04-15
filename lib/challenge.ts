@@ -1,14 +1,14 @@
 /**
- * Phase 3 Challenge Engine
+ * Phase 3 Challenge Engine (v2 — upgraded difficulty)
  * Generates 10 deterministic math questions from a seed.
  * 5 question types, each appearing twice, shuffled by seed.
  *
  * Question types:
- *  1. Polynomial evaluation  — evaluate P(x) for a given x
- *  2. Matrix determinant     — 3×3 integer matrix
- *  3. Modular exponentiation — a^b mod m
- *  4. System of equations    — 3-variable linear system (integer solutions)
- *  5. Combinatorics          — C(n,k) or permutation counting
+ *  1. Polynomial evaluation  — degree 6-8, evaluate P(x) for a given x
+ *  2. Matrix determinant     — 4×4 integer matrix, entries -12 to 12
+ *  3. Modular exponentiation — a^b mod m with larger ranges
+ *  4. System of equations    — 4-variable linear system (integer solutions)
+ *  5. Discrete logarithm     — find x where g^x ≡ h (mod p)
  */
 
 // ─── Seeded PRNG (xoshiro128**) ────────────────────────────────────
@@ -61,27 +61,35 @@ function modPow(base: bigint, exp: bigint, mod: bigint): bigint {
   return result
 }
 
-/** 3×3 matrix determinant */
-function det3(m: number[][]): number {
-  return (
-    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
-    m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
-    m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
-  )
+/** 4×4 matrix determinant via cofactor expansion */
+function det4(m: number[][]): number {
+  let result = 0
+  for (let j = 0; j < 4; j++) {
+    const minor: number[][] = []
+    for (let row = 1; row < 4; row++) {
+      const r: number[] = []
+      for (let col = 0; col < 4; col++) {
+        if (col !== j) r.push(m[row][col])
+      }
+      minor.push(r)
+    }
+    const cofactor =
+      minor[0][0] * (minor[1][1] * minor[2][2] - minor[1][2] * minor[2][1]) -
+      minor[0][1] * (minor[1][0] * minor[2][2] - minor[1][2] * minor[2][0]) +
+      minor[0][2] * (minor[1][0] * minor[2][1] - minor[1][1] * minor[2][0])
+    result += (j % 2 === 0 ? 1 : -1) * m[0][j] * cofactor
+  }
+  return result
 }
 
-/** Factorial */
-function factorial(n: number): bigint {
-  let f = 1n
-  for (let i = 2n; i <= BigInt(n); i++) f *= i
-  return f
-}
-
-/** C(n, k) */
-function combinations(n: number, k: number): bigint {
-  if (k > n) return 0n
-  if (k === 0 || k === n) return 1n
-  return factorial(n) / (factorial(k) * factorial(n - k))
+/** Discrete logarithm: find x where g^x ≡ h (mod p), brute force */
+function discreteLog(g: number, h: number, p: number): number {
+  let power = 1
+  for (let x = 0; x < p; x++) {
+    if (power === h % p) return x
+    power = (power * g) % p
+  }
+  return -1 // should never happen with valid inputs
 }
 
 // ─── Question interfaces ───────────────────────────────────────────
@@ -111,9 +119,9 @@ const POLY_NARRATIVES = [
 
 const MATRIX_NARRATIVES = [
   (m: number[][]) =>
-    `A sentinel's sensor calibration matrix is:\n${formatMatrix(m)}\nCompute the determinant.`,
+    `A sentinel's sensor calibration tensor is:\n${formatMatrix(m)}\nCompute the determinant of this 4×4 matrix.`,
   (m: number[][]) =>
-    `The grid alignment tensor reads:\n${formatMatrix(m)}\nWhat is its determinant?`,
+    `The grid alignment tensor reads:\n${formatMatrix(m)}\nWhat is the determinant of this 4×4 matrix?`,
 ]
 
 const MODPOW_NARRATIVES = [
@@ -125,16 +133,16 @@ const MODPOW_NARRATIVES = [
 
 const SYSTEM_NARRATIVES = [
   (eqs: string[]) =>
-    `A sentinel network balances power across three nodes:\n${eqs.join("\n")}\nSolve for x, y, z. Answer as "x,y,z".`,
+    `A sentinel network balances power across four nodes:\n${eqs.join("\n")}\nSolve for x, y, z, w. Answer as "x,y,z,w".`,
   (eqs: string[]) =>
-    `Three relay stations must synchronize:\n${eqs.join("\n")}\nFind x, y, z. Answer as "x,y,z".`,
+    `Four relay stations must synchronize:\n${eqs.join("\n")}\nFind x, y, z, w. Answer as "x,y,z,w".`,
 ]
 
-const COMBO_NARRATIVES = [
-  (n: number, k: number) =>
-    `From ${n} available sentinel units, ${k} must be selected for deployment. How many distinct deployment configurations exist?`,
-  (n: number, k: number) =>
-    `A surveillance grid has ${n} nodes. Choose ${k} for active monitoring. How many ways can this be done?`,
+const DLOG_NARRATIVES = [
+  (g: number, h: number, p: number) =>
+    `An encrypted sentinel beacon uses the equation ${g}^x ≡ ${h} (mod ${p}). Find the smallest non-negative integer x.`,
+  (g: number, h: number, p: number) =>
+    `Agent key recovery requires solving: ${g}^x ≡ ${h} (mod ${p}). What is the smallest non-negative x?`,
 ]
 
 // ─── Formatters ────────────────────────────────────────────────────
@@ -167,13 +175,13 @@ function formatMatrix(m: number[][]): string {
 // ─── Question generators ───────────────────────────────────────────
 
 function genPolynomial(rng: ReturnType<typeof createRng>, variant: number): { q: Omit<ChallengeQuestion, "index">; answer: string } {
-  const degree = rng.int(3, 5)
+  const degree = rng.int(6, 8)
   const coeffs: number[] = []
   for (let i = 0; i <= degree; i++) {
-    coeffs.push(rng.int(-9, 9) || 1) // avoid 0 for leading
+    coeffs.push(rng.int(-12, 12) || 1) // avoid 0 for leading
   }
   coeffs[0] = Math.abs(coeffs[0]) || 1 // positive leading
-  const x = rng.int(-5, 5)
+  const x = rng.int(-6, 6)
 
   let result = 0
   for (let i = 0; i < coeffs.length; i++) {
@@ -193,29 +201,29 @@ function genPolynomial(rng: ReturnType<typeof createRng>, variant: number): { q:
 
 function genMatrix(rng: ReturnType<typeof createRng>, variant: number): { q: Omit<ChallengeQuestion, "index">; answer: string } {
   const m: number[][] = []
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const row: number[] = []
-    for (let j = 0; j < 3; j++) {
-      row.push(rng.int(-9, 9))
+    for (let j = 0; j < 4; j++) {
+      row.push(rng.int(-12, 12))
     }
     m.push(row)
   }
-  const d = det3(m)
+  const d = det4(m)
   const narrative = MATRIX_NARRATIVES[variant % MATRIX_NARRATIVES.length]
   return {
     q: {
       type: "matrix_determinant",
       prompt: narrative(m),
-      hint: "Compute the 3×3 determinant",
+      hint: "Compute the 4×4 determinant",
     },
     answer: String(d),
   }
 }
 
 function genModPow(rng: ReturnType<typeof createRng>, variant: number): { q: Omit<ChallengeQuestion, "index">; answer: string } {
-  const a = rng.int(2, 50)
-  const b = rng.int(10, 100)
-  const m = rng.int(100, 997)
+  const a = rng.int(10, 200)
+  const b = rng.int(50, 500)
+  const m = rng.int(500, 9973)
   const result = modPow(BigInt(a), BigInt(b), BigInt(m))
   const narrative = MODPOW_NARRATIVES[variant % MODPOW_NARRATIVES.length]
   return {
@@ -233,29 +241,32 @@ function genSystem(rng: ReturnType<typeof createRng>, variant: number): { q: Omi
   const x = rng.int(-5, 5)
   const y = rng.int(-5, 5)
   const z = rng.int(-5, 5)
+  const w = rng.int(-5, 5)
 
-  // Random coefficients for 3 equations
-  const eqs: { a: number; b: number; c: number; d: number }[] = []
-  for (let i = 0; i < 3; i++) {
+  // Random coefficients for 4 equations with 4 variables
+  const eqs: { a: number; b: number; c: number; d: number; e: number }[] = []
+  for (let i = 0; i < 4; i++) {
     const a = rng.int(-5, 5) || 1
     const b = rng.int(-5, 5) || 1
     const c = rng.int(-5, 5) || 1
-    const d = a * x + b * y + c * z
-    eqs.push({ a, b, c, d })
+    const d = rng.int(-5, 5) || 1
+    const e = a * x + b * y + c * z + d * w
+    eqs.push({ a, b, c, d, e })
   }
 
-  // Verify the system has a unique solution by checking determinant
-  const coefMatrix = eqs.map((e) => [e.a, e.b, e.c])
-  const d = det3(coefMatrix)
+  // Verify the system has a unique solution by checking 4×4 determinant
+  const coefMatrix = eqs.map((eq) => [eq.a, eq.b, eq.c, eq.d])
+  const d = det4(coefMatrix)
   if (d === 0) {
     // Degenerate — fix by forcing a known good system
-    eqs[0] = { a: 1, b: 0, c: 0, d: x }
-    eqs[1] = { a: 0, b: 1, c: 0, d: y }
-    eqs[2] = { a: 0, b: 0, c: 1, d: z }
+    eqs[0] = { a: 1, b: 0, c: 0, d: 0, e: x }
+    eqs[1] = { a: 0, b: 1, c: 0, d: 0, e: y }
+    eqs[2] = { a: 0, b: 0, c: 1, d: 0, e: z }
+    eqs[3] = { a: 0, b: 0, c: 0, d: 1, e: w }
   }
 
   const eqStrings = eqs.map(
-    (e) => `${e.a}x + ${e.b}y + ${e.c}z = ${e.d}`
+    (eq) => `${eq.a}x + ${eq.b}y + ${eq.c}z + ${eq.d}w = ${eq.e}`
   )
 
   const narrative = SYSTEM_NARRATIVES[variant % SYSTEM_NARRATIVES.length]
@@ -263,30 +274,47 @@ function genSystem(rng: ReturnType<typeof createRng>, variant: number): { q: Omi
     q: {
       type: "system_of_equations",
       prompt: narrative(eqStrings),
-      hint: "Solve the 3-variable linear system",
+      hint: "Solve the 4-variable linear system",
     },
-    answer: `${x},${y},${z}`,
+    answer: `${x},${y},${z},${w}`,
   }
 }
 
-function genCombinatorics(rng: ReturnType<typeof createRng>, variant: number): { q: Omit<ChallengeQuestion, "index">; answer: string } {
-  const n = rng.int(8, 20)
-  const k = rng.int(2, Math.min(n - 1, 8))
-  const result = combinations(n, k)
-  const narrative = COMBO_NARRATIVES[variant % COMBO_NARRATIVES.length]
+function genDiscreteLog(rng: ReturnType<typeof createRng>, variant: number): { q: Omit<ChallengeQuestion, "index">; answer: string } {
+  // Pick a prime p in [101, 499]
+  const primes = [101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,491,499]
+  const p = primes[rng.int(0, primes.length - 1)]
+
+  // Pick a generator g (small primitive-root-ish base)
+  const g = rng.int(2, 10)
+
+  // Pick secret exponent x in [2, p-2]
+  const x = rng.int(2, Math.min(p - 2, 400))
+
+  // h = g^x mod p
+  let h = 1
+  let base = g % p
+  let exp = x
+  while (exp > 0) {
+    if (exp % 2 === 1) h = (h * base) % p
+    base = (base * base) % p
+    exp = Math.floor(exp / 2)
+  }
+
+  const narrative = DLOG_NARRATIVES[variant % DLOG_NARRATIVES.length]
   return {
     q: {
-      type: "combinatorics",
-      prompt: narrative(n, k),
-      hint: `Calculate C(${n}, ${k})`,
+      type: "discrete_log",
+      prompt: narrative(g, h, p),
+      hint: `Find x such that ${g}^x ≡ ${h} (mod ${p})`,
     },
-    answer: String(result),
+    answer: String(x),
   }
 }
 
 // ─── Main generator ─────────────────────────────────────────────────
 
-const GENERATORS = [genPolynomial, genMatrix, genModPow, genSystem, genCombinatorics] as const
+const GENERATORS = [genPolynomial, genMatrix, genModPow, genSystem, genDiscreteLog] as const
 
 const CHALLENGE_WINDOW_MS = 5 * 60 * 1000 // 5 minutes
 
