@@ -301,6 +301,10 @@ function genDiscreteLog(rng: ReturnType<typeof createRng>, variant: number): { q
     exp = Math.floor(exp / 2)
   }
 
+  // Find the smallest x (the prompt asks for "smallest non-negative integer x").
+  // When g is not a primitive root mod p, multiple x values satisfy g^x ≡ h (mod p).
+  const smallestX = discreteLog(g, h, p)
+
   const narrative = DLOG_NARRATIVES[variant % DLOG_NARRATIVES.length]
   return {
     q: {
@@ -308,7 +312,7 @@ function genDiscreteLog(rng: ReturnType<typeof createRng>, variant: number): { q
       prompt: narrative(g, h, p),
       hint: `Find x such that ${g}^x ≡ ${h} (mod ${p})`,
     },
-    answer: String(x),
+    answer: String(smallestX),
   }
 }
 
