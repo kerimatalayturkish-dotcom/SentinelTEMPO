@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { getServerEnv } from "@/lib/env"
+import { getOptionalServerEnv } from "@/lib/env"
 import {
   ADMIN_COOKIE,
   constantTimeEqual,
@@ -33,10 +33,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
   }
 
-  let env: ReturnType<typeof getServerEnv>
-  try {
-    env = getServerEnv()
-  } catch {
+  const env = getOptionalServerEnv()
+  if (!env.adminUsername || !env.adminPassword || !env.jwtSecret) {
     return NextResponse.json({ error: "Admin not configured" }, { status: 503 })
   }
 
