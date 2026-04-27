@@ -1,5 +1,7 @@
-import type { Store } from "mppx"
+import type { Store as StoreNs } from "mppx"
 import pool from "./db"
+
+type Store = StoreNs.Store
 
 /**
  * Postgres-backed implementation of mppx's Store interface.
