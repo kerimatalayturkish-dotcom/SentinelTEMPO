@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, http, isAddress, getAddress, formatUnits } from "viem"
+import { createPublicClient, isAddress, getAddress, formatUnits } from "viem"
 import { requireAdmin } from "@/lib/auth"
 import { tempoChain, NFT_CONTRACT_ADDRESS, PATHUSD_ADDRESS, PATHUSD_DECIMALS } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
 import { getMintReceipt } from "@/lib/receipts"
+import { serverHttp } from "@/lib/server-rpc"
 
-const publicClient = createPublicClient({ chain: tempoChain, transport: http() })
+const publicClient = createPublicClient({ chain: tempoChain, transport: serverHttp() })
 
 const ZERO = "0x0000000000000000000000000000000000000000" as `0x${string}`
 // keccak256("Transfer(address,address,uint256)") — standard TIP-20/ERC-20.

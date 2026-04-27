@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createPublicClient, http, formatUnits } from "viem"
+import { createPublicClient, formatUnits } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import pool from "@/lib/db"
 import { requireAdmin } from "@/lib/auth"
@@ -12,10 +12,11 @@ import {
   PHASE_NAMES,
 } from "@/lib/chain"
 import { SENTINEL_ABI, PATHUSD_ABI } from "@/lib/contract"
+import { serverHttp } from "@/lib/server-rpc"
 
 const publicClient = createPublicClient({
   chain: tempoChain,
-  transport: http(),
+  transport: serverHttp(),
 })
 
 export async function GET() {

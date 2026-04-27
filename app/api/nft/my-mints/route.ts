@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, http, isAddress } from "viem"
+import { createPublicClient, isAddress } from "viem"
 import { tempoChain, NFT_CONTRACT_ADDRESS } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { getReceiptsForRecipient, recordMintReceipt } from "@/lib/receipts"
+import { serverHttp } from "@/lib/server-rpc"
 
-const publicClient = createPublicClient({ chain: tempoChain, transport: http() })
+const publicClient = createPublicClient({ chain: tempoChain, transport: serverHttp() })
 const ZERO = "0x0000000000000000000000000000000000000000" as `0x${string}`
 
 // Returns the connected wallet's mints. Strategy:

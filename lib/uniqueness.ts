@@ -1,12 +1,13 @@
-import { createPublicClient, http } from "viem"
+import { createPublicClient } from "viem"
 import { tempoChain, NFT_CONTRACT_ADDRESS } from "./chain"
 import { SENTINEL_ABI } from "./contract"
 import { computeTraitHash } from "./traits"
 import type { TraitSelection } from "./traits"
+import { serverHttp } from "./server-rpc"
 
 const publicClient = createPublicClient({
   chain: tempoChain,
-  transport: http(),
+  transport: serverHttp(),
 })
 
 // ─── Registry ──────────────────────────────────────────────────────

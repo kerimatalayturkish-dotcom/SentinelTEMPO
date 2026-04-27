@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, http } from "viem"
+import { createPublicClient } from "viem"
 import { tempoChain, NFT_CONTRACT_ADDRESS } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
+import { serverHttp } from "@/lib/server-rpc"
 
 const publicClient = createPublicClient({
   chain: tempoChain,
-  transport: http(),
+  transport: serverHttp(),
 })
 
 export async function GET(request: NextRequest) {

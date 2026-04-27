@@ -6,16 +6,17 @@
 // cannot inject anything — all data comes from the on-chain log.
 
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, decodeEventLog, decodeFunctionData, http } from "viem"
+import { createPublicClient, decodeEventLog, decodeFunctionData } from "viem"
 import { tempoChain, NFT_CONTRACT_ADDRESS } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { recordMintReceipt, type MintKind } from "@/lib/receipts"
+import { serverHttp } from "@/lib/server-rpc"
 
 const ZERO = "0x0000000000000000000000000000000000000000"
 const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/
 
-const publicClient = createPublicClient({ chain: tempoChain, transport: http() })
+const publicClient = createPublicClient({ chain: tempoChain, transport: serverHttp() })
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)

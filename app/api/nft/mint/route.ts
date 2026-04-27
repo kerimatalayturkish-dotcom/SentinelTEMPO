@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 import { Mppx, tempo } from "mppx/server"
 import { Receipt } from "mppx"
 import { privateKeyToAccount } from "viem/accounts"
-import { createPublicClient, createWalletClient, decodeEventLog, http, keccak256, toBytes, type PublicClient } from "viem"
+import { createPublicClient, createWalletClient, decodeEventLog, keccak256, toBytes, type PublicClient } from "viem"
 import { getTransaction } from "viem/actions"
 import pool from "@/lib/db"
 import { getServerEnv } from "@/lib/env"
+import { serverHttp } from "@/lib/server-rpc"
 import {
   tempoChain,
   NFT_CONTRACT_ADDRESS,
@@ -48,7 +49,7 @@ function buildMppx() {
   const env = getServerEnv()
   const publicClient: PublicClient = createPublicClient({
     chain: tempoChain,
-    transport: http(),
+    transport: serverHttp(),
   })
   const mppx = Mppx.create({
     methods: [
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
   const walletClient = createWalletClient({
     account: serverAccount,
     chain: tempoChain,
-    transport: http(),
+    transport: serverHttp(),
   })
 
   // ????????? 1. Parse & pre-flight validation (before MPP) ??????????????????????????????????????????

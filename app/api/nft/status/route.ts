@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, formatUnits, http } from "viem"
+import { createPublicClient, formatUnits } from "viem"
 import {
   tempoChain,
   NFT_CONTRACT_ADDRESS,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
+import { serverHttp } from "@/lib/server-rpc"
 
 function trimZeros(s: string): string {
   return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s
@@ -16,7 +17,7 @@ function trimZeros(s: string): string {
 
 const publicClient = createPublicClient({
   chain: tempoChain,
-  transport: http(),
+  transport: serverHttp(),
 })
 
 export async function GET(request: NextRequest) {

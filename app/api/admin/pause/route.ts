@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, createWalletClient, http } from "viem"
+import { createPublicClient, createWalletClient } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { requireAdmin } from "@/lib/auth"
 import { getOptionalServerEnv } from "@/lib/env"
 import { tempoChain, NFT_CONTRACT_ADDRESS } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
+import { serverHttp } from "@/lib/server-rpc"
 
 export async function POST(request: NextRequest) {
   const admin = await requireAdmin()
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
   }
 
   const owner = privateKeyToAccount(env.ownerPrivateKey)
-  const publicClient = createPublicClient({ chain: tempoChain, transport: http() })
-  const walletClient = createWalletClient({ chain: tempoChain, transport: http(), account: owner })
+  const publicClient = createPublicClient({ chain: tempoChain, transport: serverHttp() })
+  const walletClient = createWalletClient({ chain: tempoChain, transport: serverHttp(), account: owner })
 
   // Pre-flight: check current paused state + pause-count cap so we fail fast with a clean error.
   try {
