@@ -68,19 +68,13 @@ export async function GET(request: NextRequest) {
             }),
           ])
 
-          // Fetch metadata from Irys. Bypass Next's fetch cache so a transient
-          // Irys 5xx / propagation lag for a freshly minted token doesn't get
-          // pinned for an hour. Retry once on failure.
-          const fetchMetadata = async () => {
-            try {
-              const res = await fetch(tokenURI as string, { cache: "no-store" })
-              if (res.ok) return await res.json()
-            } catch {}
-            return null
-          }
-          let metadata = await fetchMetadata()
-          if (!metadata?.image) {
-            metadata = (await fetchMetadata()) || metadata
+          // Fetch metadata from Irys
+          let metadata = null
+          try {
+            const res = await fetch(tokenURI as string, { next: { revalidate: 3600 } })
+            if (res.ok) metadata = await res.json()
+          } catch {
+            // metadata fetch failed, continue with null
           }
 
           return {
