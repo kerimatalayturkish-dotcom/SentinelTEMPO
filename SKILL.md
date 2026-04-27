@@ -110,6 +110,8 @@ Each AI agent must use **its own wallet** to pay mint fees. Do NOT reuse another
 
 > **SECURITY:** Never hardcode your private key in files. Always use the `MPPX_PRIVATE_KEY` environment variable.
 
+> **CRITICAL — payer === recipient:** The wallet derived from your `MPPX_PRIVATE_KEY` is BOTH the payer AND the NFT owner. The server enforces that the payment must come from the same address you list as `recipient` in the mint body. **You can only mint to your own wallet.** If `recipient` ≠ payer wallet, the server refunds the payment and returns 403. This is a one-step flow: mint goes straight to the agent's funded wallet. If a user wants the NFT, they must transfer it (or the funded pathUSD) themselves; the agent cannot mint directly to a third-party address.
+
 ---
 
 ## How to Call the API
@@ -129,19 +131,21 @@ curl -s https://sentineltempo.onrender.com/api/nft/status
 Linux/macOS:
 ```bash
 cat > mint-body.json << 'EOF'
-{"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xRECIPIENT"}
+{"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"}
 EOF
 ```
 
 Windows (PowerShell):
 ```powershell
-'{"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xRECIPIENT"}' | Out-File -Encoding utf8 mint-body.json
+'{"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"}' | Out-File -Encoding utf8 mint-body.json
 ```
 
 Windows (cmd):
 ```cmd
-echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xRECIPIENT"} > mint-body.json
+echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"} > mint-body.json
 ```
+
+> `0xYOUR_AGENT_WALLET` is the address derived from your `MPPX_PRIVATE_KEY`. The mint server enforces `payer === recipient`; using a different address triggers an automatic refund and 403.
 
 **Step 2 — Call mppx (same on all platforms):**
 ```bash
@@ -309,8 +313,8 @@ Only `background` and `body` are required. All other layers are optional — omi
 ### 7. POST /api/nft/mint — Mint an NFT (PAID)
 
 This is the paid endpoint. Cost depends on phase:
-- **Whitelist phase:** 2.00 pathUSD (recipient must be whitelisted)
-- **Agent Public phase:** 3.00 pathUSD (any recipient)
+- **Whitelist phase:** 2.00 pathUSD (your agent wallet must be whitelisted)
+- **Agent Public phase:** 3.00 pathUSD (any whitelisted-or-not agent wallet)
 
 **You must use `npx mppx` to call this endpoint** — it handles the HTTP 402 payment flow automatically.
 
@@ -326,19 +330,19 @@ This is the paid endpoint. Cost depends on phase:
     "eyewear": "ar_glasses",
     "head_items": "twin_antennas"
   },
-  "recipient": "0xRECIPIENT_WALLET_ADDRESS"
+  "recipient": "0xYOUR_AGENT_WALLET_ADDRESS"
 }
 ```
 
 - `traits` — object with trait selections (2 required: `background` + `body`, 5 optional: `back`, `mouth`, `eyes`, `eyewear`, `head_items`)
-- `recipient` — the wallet address that will own the minted NFT (must be a valid 0x address)
+- `recipient` — the wallet address that will own the minted NFT. **Must equal the wallet address derived from `MPPX_PRIVATE_KEY`.** The server verifies the on-chain payment `tx.from` against this field; mismatch → 403 + automatic refund.
 - Trait combination must be unique (not previously minted)
 
 **Full mint command (Windows) — use file-based JSON:**
 
 Step 1 — Write body to file:
 ```cmd
-echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xRECIPIENT"} > mint-body.json
+echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"} > mint-body.json
 ```
 
 Step 2 — Mint:
@@ -385,18 +389,18 @@ npx mppx -s -r https://rpc.tempo.xyz -X POST -H "Content-Type: application/json"
 curl -s https://sentineltempo.onrender.com/api/nft/status
 ```
 Check the `phase` field:
-- If `"whitelist"` → agent can mint **for whitelisted recipients only** (2.00 pathUSD).
-- If `"agent_public"` → agent can mint for any recipient (3.00 pathUSD).
+- If `"whitelist"` → agent can mint **only if your own agent wallet is whitelisted** (2.00 pathUSD).
+- If `"agent_public"` → agent can mint to its own wallet (3.00 pathUSD).
 - If `"closed"`, `"wl_agent_interval"`, `"agent_human_interval"`, or `"human_public"` → agent **cannot** mint right now. Tell the user which phase it is and when agent minting will be available again.
 
 Also check `remaining > 0` and `phaseRemaining > 0`.
 
 **Step 2 — Check whitelist (if WL phase):**
-If the phase is `"whitelist"`, check if the recipient is whitelisted:
+If the phase is `"whitelist"`, check if YOUR agent wallet is whitelisted (recipient = your wallet, since payer === recipient is enforced):
 ```bash
-curl -s "https://sentineltempo.onrender.com/api/nft/wl/check?address=0xRECIPIENT"
+curl -s "https://sentineltempo.onrender.com/api/nft/wl/check?address=0xYOUR_AGENT_WALLET"
 ```
-If not whitelisted, the mint will be rejected with 403. Wait for the `agent_public` phase or use a whitelisted recipient.
+If not whitelisted, the mint will be rejected with 403. Wait for the `agent_public` phase.
 
 **Step 3 — Show traits:**
 ```bash
@@ -404,8 +408,8 @@ curl -s https://sentineltempo.onrender.com/api/nft/traits
 ```
 Present the options to the user. Let them pick, or pick randomly if they say "surprise me" or "random".
 
-**Step 4 — Ask for recipient:**
-The user must provide a wallet address (0x...) to receive the NFT. If they don't provide one, ask them.
+**Step 4 — Set recipient = your own wallet address:**
+The `recipient` MUST be the wallet address derived from your `MPPX_PRIVATE_KEY` (the wallet that pays). You cannot mint directly to the user's address — the server enforces `payer === recipient` and will refund any mismatched payment. Tell the user the NFT will land in your agent wallet first, and they should transfer it (or the pathUSD) themselves if they want a different destination.
 
 **Step 5 — Check uniqueness (recommended):**
 ```bash
@@ -419,7 +423,7 @@ If `unique: false`, change one or more traits and retry.
 
 Write body to file:
 ```cmd
-echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xUSER_ADDRESS"} > mint-body.json
+echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"} > mint-body.json
 ```
 
 Then mint:
@@ -438,13 +442,17 @@ Share the `tokenId`, `imageUrl`, and `txHash` with the user. The TX can be inspe
 | HTTP Code | Meaning | What to Do |
 |---|---|---|
 | 402 | Payment Required | You called `/mint` with curl instead of mppx. Use `npx mppx` |
-| 403 `"Agent minting is not active"` | Wrong phase | Check `/api/nft/status` — agent can only mint during `whitelist` and `agent_public` phases |
-| 403 `"Recipient not whitelisted"` | Non-WL address in WL phase | Wait for `agent_public` phase, or use a whitelisted recipient |
+| 403 `"Agent minting is not active in the current phase"` | Wrong phase | Check `/api/nft/status` — agent can only mint during `whitelist` and `agent_public` phases |
+| 403 `"Recipient address is not whitelisted"` | Non-WL address in WL phase | Wait for `agent_public` phase, or use a whitelisted recipient |
+| 403 `"Recipient must equal payer. Refund queued."` | `recipient` ≠ payer wallet | Set `recipient` to the address derived from your `MPPX_PRIVATE_KEY`. Refund will be processed automatically. |
 | 400 `"Invalid traits"` | Bad trait IDs | Check `/api/nft/traits` for valid options |
-| 400 `"Invalid recipient"` | Bad wallet address | Must be `0x` + 40 hex characters |
-| 400 `"Missing traits object"` | Empty or missing traits | Include the traits object in the body |
-| 409 `"trait combination already minted"` | Duplicate combo | Change one or more traits and retry |
-| 409 `"sold out"` / `"per-wallet cap reached"` | Supply or wallet limit hit | Use a different recipient, or wait for next phase |
+| 400 `"Invalid recipient address"` | Bad wallet address | Must be `0x` + 40 hex characters |
+| 400 `"Missing traits"` | Empty or missing traits | Include the traits object in the body |
+| 409 `"This trait combination has already been minted"` | Duplicate combo | Change one or more traits and retry |
+| 409 `"Sold out"` | Max supply reached | Collection is fully minted |
+| 409 `"Recipient has already minted their whitelist allocation"` | WL 1-per-wallet cap hit | Use a fresh wallet, or wait for `agent_public` |
+| 409 `"Recipient has reached the per-wallet agent mint cap"` | 5-per-wallet cap hit in agent phase | Use a fresh wallet |
+| 409 `"Phase changed between charge and mint. Refund queued."` | Phase auto-advanced mid-flight | Re-check `/api/nft/status` and retry. Refund processes automatically. |
 | 404 `"Address not whitelisted"` | Proof requested for non-WL address | Only WL addresses have proofs |
 | 500 | Server error | Check `/api/nft/status` and retry; if persistent, alert the user |
 
