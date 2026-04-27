@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, http } from "viem"
-import { tempoChain, NFT_CONTRACT_ADDRESS, PHASE_NAMES } from "@/lib/chain"
+import { createPublicClient, formatUnits, http } from "viem"
+import {
+  tempoChain,
+  NFT_CONTRACT_ADDRESS,
+  PHASE_NAMES,
+  PATHUSD_DECIMALS,
+  AGENT_CHARGE_PUBLIC,
+} from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
+
+function trimZeros(s: string): string {
+  return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s
+}
 
 const publicClient = createPublicClient({
   chain: tempoChain,
@@ -15,7 +25,7 @@ export async function GET(request: NextRequest) {
   if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs)
 
   try {
-    const [phaseInfoResult, isPaused, maxSupply, wlCap, agentCap] = await Promise.all([
+    const [phaseInfoResult, isPaused, maxSupply, wlCap, agentCap, wlPrice, humanPrice] = await Promise.all([
       publicClient.readContract({
         address: NFT_CONTRACT_ADDRESS,
         abi: SENTINEL_ABI,
@@ -41,6 +51,16 @@ export async function GET(request: NextRequest) {
         abi: SENTINEL_ABI,
         functionName: "AGENT_CAP",
       }),
+      publicClient.readContract({
+        address: NFT_CONTRACT_ADDRESS,
+        abi: SENTINEL_ABI,
+        functionName: "WL_PRICE",
+      }),
+      publicClient.readContract({
+        address: NFT_CONTRACT_ADDRESS,
+        abi: SENTINEL_ABI,
+        functionName: "HUMAN_PRICE",
+      }),
     ])
 
     const [phase, phaseEndsAt, phaseRemaining, totalSupply, wlSupply, agentSupply] = phaseInfoResult as [
@@ -59,9 +79,9 @@ export async function GET(request: NextRequest) {
       humanSupply: Number(totalSupply) - Number(wlSupply) - Number(agentSupply),
       paused: isPaused,
       prices: {
-        whitelist: "1",
-        agent_public: "2",
-        human_public: "3",
+        whitelist: trimZeros(formatUnits(wlPrice as bigint, PATHUSD_DECIMALS)),
+        agent_public: AGENT_CHARGE_PUBLIC,
+        human_public: trimZeros(formatUnits(humanPrice as bigint, PATHUSD_DECIMALS)),
         currency: "pathUSD",
       },
       limits: {
