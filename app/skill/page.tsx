@@ -1,6 +1,9 @@
 import { promises as fs } from "fs"
 import path from "path"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function SkillPage() {
   const filePath = path.join(process.cwd(), "SKILL.md")
   const content = await fs.readFile(filePath, "utf-8")
