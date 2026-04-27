@@ -1,70 +1,86 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import type { TraitSelection } from "@/lib/traits"
+import { fetchJson } from "@/lib/fetch-json"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 
-export function NFTPreview({ traits }: { traits: TraitSelection }) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const abortRef = useRef<AbortController | null>(null)
+type Layer = {
+  id: string
+  name: string
+  order: number
+  required: boolean
+  options: { id: string; name: string; file: string }[]
+}
+
+type Catalog = { layers: Layer[] }
+
+interface NFTPreviewProps {
+  traits: TraitSelection
+  name: string | null
+  checking: boolean
+  unique: boolean | null
+}
+
+export function NFTPreview({ traits, name, checking, unique }: NFTPreviewProps) {
+  const [catalog, setCatalog] = useState<Catalog | null>(null)
+
+  useEffect(() => {
+    fetchJson<Catalog>("/api/nft/traits")
+      .then((data) => setCatalog(data))
+      .catch(console.error)
+  }, [])
 
   const hasTraits = Object.keys(traits).length > 0
 
-  useEffect(() => {
-    if (!hasTraits) {
-      setImageUrl(null)
-      return
+  // Build ordered list of layer image paths
+  const layerImages: { key: string; src: string }[] = []
+  if (catalog && hasTraits) {
+    for (const layer of catalog.layers) {
+      const optionId = traits[layer.id]
+      if (!optionId) continue
+      const option = layer.options.find((o) => o.id === optionId)
+      if (!option) continue
+      layerImages.push({
+        key: `${layer.id}-${optionId}`,
+        src: `/layers/${option.file}`,
+      })
     }
-
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    setLoading(true)
-
-    fetch("/api/nft/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ traits }),
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Preview failed")
-        return res.blob()
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob)
-        setImageUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev)
-          return url
-        })
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") console.error(err)
-      })
-      .finally(() => setLoading(false))
-
-    return () => controller.abort()
-  }, [traits, hasTraits])
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xs">Preview</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xs">Preview</CardTitle>
+          {checking && (
+            <span className="text-[10px] text-muted-foreground animate-pulse">
+              checking...
+            </span>
+          )}
+          {!checking && unique === true && name && (
+            <span className="text-[10px] text-green-500 font-medium">
+              {name} — unique ✓
+            </span>
+          )}
+          {!checking && unique === false && (
+            <span className="text-[10px] text-red-500 font-medium">
+              Combo already minted — change traits
+            </span>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="aspect-square relative rounded-lg overflow-hidden bg-muted">
-          {loading && (
-            <Skeleton className="absolute inset-0" />
-          )}
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt="NFT Preview"
-              className="w-full h-full object-cover"
-            />
+          {layerImages.length > 0 ? (
+            layerImages.map((layer) => (
+              <img
+                key={layer.key}
+                src={layer.src}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ))
           ) : (
             <div className="flex items-center justify-center h-full">
               <p className="text-sm text-muted-foreground">

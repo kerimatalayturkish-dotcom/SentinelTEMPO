@@ -1,74 +1,75 @@
-import { keccak256, encodePacked, concatHex, type Hex } from "viem"
+/**
+ * Regenerate the Merkle tree for the current whitelist and publish it:
+ *   1. Read `config/whitelist.json`
+ *   2. Build an OpenZeppelin StandardMerkleTree (double-hashed leaves,
+ *      matches `keccak256(bytes.concat(keccak256(abi.encode(sender))))`
+ *      in SentinelTEMPO.sol)
+ *   3. Write the root to `config/merkle-root.json` (hardhat scripts still
+ *      read this file to call `setMerkleRoot`)
+ *   4. Atomically upsert every (address, proof) pair into the
+ *      `merkle_proofs` table via `lib/merkle.ts`
+ *
+ * Run:  pnpm generate-merkle
+ *       (requires DATABASE_URL + whitelist.json)
+ */
+
+import { StandardMerkleTree } from "@openzeppelin/merkle-tree"
 import fs from "fs"
 import path from "path"
+import { getAddress } from "viem"
 
-const whitelistPath = path.resolve(__dirname, "../config/whitelist.json")
-const whitelist: string[] = JSON.parse(fs.readFileSync(whitelistPath, "utf-8"))
+import { replaceMerkleTree } from "../lib/merkle"
 
-// Match contract: keccak256(abi.encodePacked(address))
-function hashLeaf(addr: string): Hex {
-  return keccak256(encodePacked(["address"], [addr.toLowerCase() as `0x${string}`]))
-}
+async function main() {
+  const whitelistPath = path.resolve(__dirname, "../config/whitelist.json")
+  const raw: string[] = JSON.parse(fs.readFileSync(whitelistPath, "utf-8"))
 
-function hashPair(a: Hex, b: Hex): Hex {
-  // Sort pair to get deterministic ordering (same as OZ MerkleProof)
-  return a < b
-    ? keccak256(concatHex([a, b]))
-    : keccak256(concatHex([b, a]))
-}
+  if (raw.length === 0) throw new Error("Whitelist is empty")
 
-function buildTree(leaves: Hex[]): Hex[][] {
-  if (leaves.length === 0) throw new Error("Empty leaves")
-  const layers: Hex[][] = [leaves.slice().sort()]
-  while (layers[layers.length - 1].length > 1) {
-    const current = layers[layers.length - 1]
-    const next: Hex[] = []
-    for (let i = 0; i < current.length; i += 2) {
-      if (i + 1 < current.length) {
-        next.push(hashPair(current[i], current[i + 1]))
-      } else {
-        next.push(current[i]) // odd leaf promoted
-      }
+  // Normalize + deduplicate (checksum form so the tree is stable under case changes)
+  const seen = new Set<string>()
+  const addresses: string[] = []
+  for (const a of raw) {
+    const checksum = getAddress(a.trim())
+    if (!seen.has(checksum)) {
+      seen.add(checksum)
+      addresses.push(checksum)
     }
-    layers.push(next)
   }
-  return layers
-}
 
-function getProof(layers: Hex[][], leaf: Hex): Hex[] {
-  const proof: Hex[] = []
-  let idx = layers[0].indexOf(leaf)
-  if (idx === -1) throw new Error("Leaf not in tree")
-  for (let i = 0; i < layers.length - 1; i++) {
-    const layer = layers[i]
-    const siblingIdx = idx % 2 === 0 ? idx + 1 : idx - 1
-    if (siblingIdx < layer.length) {
-      proof.push(layer[siblingIdx])
-    }
-    idx = Math.floor(idx / 2)
+  // OZ StandardMerkleTree: leaf = keccak256(bytes.concat(keccak256(abi.encode(address))))
+  const tree = StandardMerkleTree.of(
+    addresses.map(a => [a]),
+    ["address"],
+  )
+
+  const root = tree.root as `0x${string}`
+  console.log("Merkle root:", root)
+  console.log("Leaves:", addresses.length)
+
+  // 1) Write root to config/merkle-root.json (consumed by contracts/scripts/set-merkle-root.ts)
+  const rootPath = path.resolve(__dirname, "../config/merkle-root.json")
+  fs.writeFileSync(rootPath, JSON.stringify({ root }, null, 2) + "\n")
+  console.log("Root written to:", rootPath)
+
+  // 2) Collect per-address proofs
+  const proofs: Record<string, `0x${string}`[]> = {}
+  for (const [i, value] of tree.entries()) {
+    const addr = (value[0] as string).toLowerCase()
+    proofs[addr] = tree.getProof(i) as `0x${string}`[]
   }
-  return proof
+
+  // 3) Atomically replace the Postgres table
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not set ??? cannot publish proofs to Postgres")
+  }
+  await replaceMerkleTree(root, proofs)
+  console.log(`Wrote ${Object.keys(proofs).length} proofs to merkle_proofs table`)
 }
 
-// Build
-const leaves = whitelist.map(addr => hashLeaf(addr))
-const layers = buildTree(leaves)
-const root = layers[layers.length - 1][0]
-
-console.log("Merkle Root:", root)
-console.log("Whitelisted addresses:", whitelist.length)
-
-// Save root
-const rootPath = path.resolve(__dirname, "../config/merkle-root.json")
-fs.writeFileSync(rootPath, JSON.stringify({ root }, null, 2))
-console.log("Root saved to:", rootPath)
-
-// Save proofs per address
-const proofs: Record<string, string[]> = {}
-for (const addr of whitelist) {
-  const leaf = hashLeaf(addr)
-  proofs[addr.toLowerCase()] = getProof(layers, leaf)
-}
-const proofsPath = path.resolve(__dirname, "../config/merkle-proofs.json")
-fs.writeFileSync(proofsPath, JSON.stringify(proofs, null, 2))
-console.log("Proofs saved to:", proofsPath)
+main()
+  .then(() => process.exit(0))
+  .catch(err => {
+    console.error(err)
+    process.exit(1)
+  })

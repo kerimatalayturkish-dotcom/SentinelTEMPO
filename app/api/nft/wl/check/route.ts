@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { isWhitelisted } from "@/lib/whitelist"
+import { isWhitelisted } from "@/lib/merkle"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 export async function GET(request: NextRequest) {
@@ -15,6 +15,6 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     address: address.toLowerCase(),
-    whitelisted: isWhitelisted(address),
+    whitelisted: await isWhitelisted(address),
   })
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getMerkleProof, isWhitelisted } from "@/lib/whitelist"
+import { getMerkleProof } from "@/lib/merkle"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 export async function GET(request: NextRequest) {
@@ -13,12 +13,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid address" }, { status: 400 })
   }
 
-  if (!isWhitelisted(address)) {
+  const proof = await getMerkleProof(address)
+  if (proof === null) {
     return NextResponse.json({ error: "Address not whitelisted" }, { status: 404 })
   }
 
   return NextResponse.json({
     address: address.toLowerCase(),
-    proof: getMerkleProof(address),
+    proof,
   })
 }

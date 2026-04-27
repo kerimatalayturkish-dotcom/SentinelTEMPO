@@ -2,8 +2,9 @@
 
 import { useAccount, useReadContract } from "wagmi"
 import { useEffect, useState } from "react"
-import { NFT_CONTRACT_ADDRESS, WL_PRICE_DISPLAY, PUBLIC_PRICE_DISPLAY } from "@/lib/chain"
+import { NFT_CONTRACT_ADDRESS, WL_PRICE_DISPLAY, HUMAN_PRICE_DISPLAY, Phase, PHASE_NAMES } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
+import { fetchJson } from "@/lib/fetch-json"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -22,7 +23,7 @@ export function WhitelistChecker() {
   const { data: mintPhase } = useReadContract({
     address: NFT_CONTRACT_ADDRESS,
     abi: SENTINEL_ABI,
-    functionName: "mintPhase",
+    functionName: "currentPhase",
   })
 
   useEffect(() => {
@@ -30,15 +31,16 @@ export function WhitelistChecker() {
       setIsWhitelisted(null)
       return
     }
-    fetch(`/api/nft/wl/check?address=${address}`)
-      .then((res) => res.json())
+    fetchJson<{ whitelisted: boolean }>(`/api/nft/wl/check?address=${address}`)
       .then((data) => setIsWhitelisted(data.whitelisted))
-      .catch(() => setIsWhitelisted(false))
+      .catch((err) => {
+        console.warn("WL check failed:", err)
+        setIsWhitelisted(false)
+      })
   }, [address])
 
   if (!isConnected) return null
 
-  const phaseNames = ["Closed", "Whitelist", "Public"]
   const phase = mintPhase !== undefined ? Number(mintPhase) : null
 
   return (
@@ -50,8 +52,8 @@ export function WhitelistChecker() {
         {phase !== null && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Phase:</span>
-            <Badge variant={phase === 0 ? "destructive" : "secondary"}>
-              {phaseNames[phase]}
+            <Badge variant={phase === Phase.CLOSED ? "destructive" : "secondary"}>
+              {PHASE_NAMES[phase] ?? "Unknown"}
             </Badge>
           </div>
         )}
@@ -62,7 +64,7 @@ export function WhitelistChecker() {
           <div className="space-y-1">
             <Badge className="bg-green-600">Whitelisted</Badge>
             {wlAlreadyMinted ? (
-              <p className="text-sm text-muted-foreground">WL mint already used. Public mint: {PUBLIC_PRICE_DISPLAY} pathUSD</p>
+              <p className="text-sm text-muted-foreground">WL mint already used. Public mint: {HUMAN_PRICE_DISPLAY} pathUSD</p>
             ) : (
               <p className="text-sm text-muted-foreground">Mint for {WL_PRICE_DISPLAY} pathUSD</p>
             )}
@@ -70,7 +72,7 @@ export function WhitelistChecker() {
         ) : (
           <div className="space-y-1">
             <Badge variant="outline">Not Whitelisted</Badge>
-            <p className="text-sm text-muted-foreground">Public mint: {PUBLIC_PRICE_DISPLAY} pathUSD</p>
+            <p className="text-sm text-muted-foreground">Public mint: {HUMAN_PRICE_DISPLAY} pathUSD</p>
           </div>
         )}
       </CardContent>

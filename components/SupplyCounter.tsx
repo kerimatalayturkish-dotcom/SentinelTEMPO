@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { fetchJson } from "@/lib/fetch-json"
 
 interface StatusData {
   totalSupply: number
@@ -14,10 +15,9 @@ export function SupplyCounter() {
   const [status, setStatus] = useState<StatusData | null>(null)
 
   useEffect(() => {
-    fetch("/api/nft/status")
-      .then((r) => r.json())
+    fetchJson<StatusData>("/api/nft/status")
       .then(setStatus)
-      .catch(() => {})
+      .catch((err) => console.warn("Status fetch failed:", err))
   }, [])
 
   if (!status) {

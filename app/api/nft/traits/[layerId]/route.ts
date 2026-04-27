@@ -12,5 +12,9 @@ export async function GET(
     return NextResponse.json({ error: "Layer not found" }, { status: 404 })
   }
 
-  return NextResponse.json(layer)
+  return NextResponse.json(layer, {
+    headers: {
+      "Cache-Control": "public, max-age=3600, s-maxage=3600, immutable",
+    },
+  })
 }

@@ -1,26 +1,46 @@
 "use client"
 
-import { WagmiProvider, http } from "wagmi"
+import { WagmiProvider, http, createConfig, createStorage, noopStorage } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
-  getDefaultConfig,
+  connectorsForWallets,
   RainbowKitProvider,
   darkTheme,
 } from "@rainbow-me/rainbowkit"
+import { okxWallet, metaMaskWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets"
 import "@rainbow-me/rainbowkit/styles.css"
 import { tempoChain } from "@/lib/chain"
 import { useState } from "react"
 
-const config = getDefaultConfig({
-  appName: "SentinelTEMPO",
-  projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "PLACEHOLDER",
-  chains: [tempoChain],
-  transports: {
-    [tempoChain.id]: http(),
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: "Recommended",
+      wallets: [okxWallet, metaMaskWallet, walletConnectWallet],
+    },
+  ],
+  {
+    appName: "SentinelTEMPO",
+    projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "PLACEHOLDER",
   },
-})
+)
+
+function makeConfig() {
+  return createConfig({
+    connectors,
+    chains: [tempoChain],
+    transports: {
+      [tempoChain.id]: http(),
+    },
+    ssr: true,
+    storage: createStorage({
+      storage: typeof window !== "undefined" ? window.localStorage : noopStorage,
+    }),
+  })
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [config] = useState(() => makeConfig())
   const [queryClient] = useState(() => new QueryClient())
 
   return (

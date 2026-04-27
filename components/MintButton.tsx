@@ -1,29 +1,48 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
-import type { TraitSelection } from "@/lib/traits"
+import { useAccount, useChainId, useReadContract, useSignMessage, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { computeTraitHash, type TraitSelection } from "@/lib/traits"
 import {
   NFT_CONTRACT_ADDRESS,
   PATHUSD_ADDRESS,
   WL_PRICE,
-  PUBLIC_PRICE,
+  HUMAN_PRICE,
+  Phase,
 } from "@/lib/chain"
 import { SENTINEL_ABI, PATHUSD_ABI } from "@/lib/contract"
+import { fetchJson } from "@/lib/fetch-json"
+import { buildMintChallenge } from "@/lib/sig"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-type MintStep = "idle" | "preparing" | "approving" | "minting" | "confirming" | "done" | "error"
+type MintStep = "idle" | "signing" | "preparing" | "approving" | "minting" | "confirming" | "done" | "error"
 
-export function MintButton({ traits }: { traits: TraitSelection }) {
+export function MintButton({ traits, disabled }: { traits: TraitSelection; disabled?: boolean }) {
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
+  const { signMessageAsync } = useSignMessage()
   const [step, setStep] = useState<MintStep>("idle")
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{
     tokenURI: string
     imageUrl: string
+    traitHash: `0x${string}`
     txHash: string
   } | null>(null)
+
+  // Fetch current phase from contract
+  const { data: phaseRaw } = useReadContract({
+    address: NFT_CONTRACT_ADDRESS,
+    abi: SENTINEL_ABI,
+    functionName: "currentPhase",
+    query: { refetchInterval: 15_000 },
+  })
+  const phase = phaseRaw !== undefined ? Number(phaseRaw) : null
+
+  // Human can only mint during WHITELIST and HUMAN_PUBLIC
+  const isHumanPhase = phase === Phase.WHITELIST || phase === Phase.HUMAN_PUBLIC
+  const isWlPhase = phase === Phase.WHITELIST
 
   // Check WL status
   const [isWhitelisted, setIsWhitelisted] = useState(false)
@@ -35,9 +54,50 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
     query: { enabled: !!address },
   })
 
-  // Determine price
-  const canUseWl = isWhitelisted && !wlAlreadyMinted
-  const price = canUseWl ? WL_PRICE : PUBLIC_PRICE
+  // Check per-wallet human mint count
+  const { data: humanMintCountRaw, refetch: refetchHumanMintCount } = useReadContract({
+    address: NFT_CONTRACT_ADDRESS,
+    abi: SENTINEL_ABI,
+    functionName: "humanMintCount",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address, refetchInterval: 15_000 },
+  })
+  const humanMints = humanMintCountRaw !== undefined ? Number(humanMintCountRaw) : 0
+
+  // Check per-wallet max
+  const { data: maxPerWalletRaw } = useReadContract({
+    address: NFT_CONTRACT_ADDRESS,
+    abi: SENTINEL_ABI,
+    functionName: "PUBLIC_MAX_PER_WALLET",
+    query: { refetchInterval: false },
+  })
+  const maxPerWallet = maxPerWalletRaw !== undefined ? Number(maxPerWalletRaw) : 5
+
+  // Check total supply + max supply for sold-out
+  const { data: totalSupplyRaw, refetch: refetchTotalSupply } = useReadContract({
+    address: NFT_CONTRACT_ADDRESS,
+    abi: SENTINEL_ABI,
+    functionName: "totalSupply",
+    query: { refetchInterval: 15_000 },
+  })
+  const { data: maxSupplyRaw } = useReadContract({
+    address: NFT_CONTRACT_ADDRESS,
+    abi: SENTINEL_ABI,
+    functionName: "MAX_SUPPLY",
+    query: { refetchInterval: false },
+  })
+  const totalSupply = totalSupplyRaw !== undefined ? Number(totalSupplyRaw) : 0
+  const maxSupply = maxSupplyRaw !== undefined ? Number(maxSupplyRaw) : 0
+  const isSoldOut = maxSupply > 0 && totalSupply >= maxSupply
+  const walletLimitReached = phase === Phase.HUMAN_PUBLIC && humanMints >= maxPerWallet
+
+  // During WL: need proof + WL check. During HUMAN_PUBLIC: anyone can mint (if under limits)
+  const canMintWl = isWlPhase && isWhitelisted && !wlAlreadyMinted
+  const canMintPublic = phase === Phase.HUMAN_PUBLIC && !walletLimitReached && !isSoldOut
+
+  // Determine which function and price
+  const mintFunction = canMintWl ? "mintWhitelist" : "mintPublic"
+  const price = canMintWl ? WL_PRICE : HUMAN_PRICE
 
   // Check allowance
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
@@ -53,20 +113,21 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
 
   useEffect(() => {
     if (!address) return
-    fetch(`/api/nft/wl/check?address=${address}`)
-      .then((r) => r.json())
+    fetchJson<{ whitelisted: boolean }>(`/api/nft/wl/check?address=${address}`)
       .then((data) => setIsWhitelisted(data.whitelisted))
-      .catch(() => setIsWhitelisted(false))
+      .catch((err) => {
+        console.warn("WL check failed:", err)
+        setIsWhitelisted(false)
+      })
   }, [address])
 
   useEffect(() => {
     if (!address || !isWhitelisted) return
-    fetch(`/api/nft/wl/proof?address=${address}`)
-      .then((r) => r.json())
+    fetchJson<{ proof?: `0x${string}`[] }>(`/api/nft/wl/proof?address=${address}`)
       .then((data) => {
         if (data.proof) setProof(data.proof)
       })
-      .catch(() => {})
+      .catch((err) => console.warn("WL proof fetch failed:", err))
   }, [address, isWhitelisted])
 
   // Contract writes
@@ -84,7 +145,6 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
     error: mintError,
   } = useWriteContract()
 
-  // Handle writeContract errors (rejected in wallet, gas estimation fail, etc.)
   useEffect(() => {
     if (approveError && step === "approving") {
       setStep("error")
@@ -99,17 +159,14 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
     }
   }, [mintError, step])
 
-  // Wait for approve
   const { isSuccess: approveConfirmed } = useWaitForTransactionReceipt({
     hash: approveHash,
   })
 
-  // Wait for mint
   const { isSuccess: mintConfirmed } = useWaitForTransactionReceipt({
     hash: mintHash,
   })
 
-  // Handle approve confirmation → trigger mint
   useEffect(() => {
     if (approveConfirmed && step === "approving") {
       refetchAllowance()
@@ -118,27 +175,66 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [approveConfirmed])
 
-  // Handle mint confirmation
   useEffect(() => {
     if (mintConfirmed && mintHash && step === "confirming") {
       setStep("done")
+      // Fire-and-forget: persist an off-chain receipt so /collection,
+      // /collection/[tokenId], and /my-mints can show the source tx.
+      // Server re-fetches the receipt from chain — no client trust.
+      void fetch("/api/nft/receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ txHash: mintHash }),
+      }).catch((err) => console.warn("receipt persist failed:", err))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mintConfirmed])
 
-  const hasRequiredTraits = Object.keys(traits).length >= 3 // at least background, body, head
+  const hasRequiredTraits = Object.keys(traits).length >= 3
+
+  // Determine if user can mint at all
+  const canMint = isHumanPhase && (canMintWl || canMintPublic)
+
+  // Phase-specific messaging
+  function getPhaseMessage(): string | null {
+    if (phase === null) return null
+    if (phase === Phase.CLOSED) return "Minting has not started yet"
+    if (phase === Phase.WL_AGENT_INTERVAL) return "Interval — minting resumes shortly"
+    if (phase === Phase.AGENT_PUBLIC) return "AI Agent mint phase — human minting is paused"
+    if (phase === Phase.AGENT_HUMAN_INTERVAL) return "Interval — human minting starts shortly"
+    if (isWlPhase && wlAlreadyMinted) return "You already minted your WL allocation — wait for the public phase"
+    if (isWlPhase && !isWhitelisted) return "Whitelist phase — your wallet is not whitelisted"
+    if (isSoldOut) return "Sold out!"
+    if (walletLimitReached) return `Wallet limit reached (${humanMints}/${maxPerWallet})`
+    return null
+  }
 
   async function handleMint() {
-    if (!address) return
+    if (!address || !canMint) return
     setError(null)
 
     try {
-      // Step 1: Prepare (compose + upload to Irys)
+      // 1. Compute trait hash client-side (same function the server + contract see).
+      const traitHash = computeTraitHash(traits)
+
+      // 2. Sign the canonical challenge so the prepare endpoint trusts us.
+      setStep("signing")
+      const nonce = crypto.randomUUID()
+      const message = buildMintChallenge({
+        address,
+        traitHash,
+        nonce,
+        chainId,
+        contract: NFT_CONTRACT_ADDRESS,
+      })
+      const signature = await signMessageAsync({ message })
+
+      // 3. Prepare: compose + pin to Irys.
       setStep("preparing")
       const prepRes = await fetch("/api/nft/prepare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ traits }),
+        body: JSON.stringify({ address, traitHash, nonce, signature, traits }),
       })
       if (!prepRes.ok) {
         const err = await prepRes.json()
@@ -146,7 +242,6 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
       }
       const { tokenURI, imageUrl } = await prepRes.json()
 
-      // Step 2: Check allowance, approve if needed
       const currentAllowance = allowance ?? 0n
       if (currentAllowance < price) {
         setStep("approving")
@@ -155,17 +250,13 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
           abi: PATHUSD_ABI,
           functionName: "approve",
           args: [NFT_CONTRACT_ADDRESS, price],
-          gas: 21_000_000n,
         })
-        // The rest continues in the approveConfirmed effect
-        // Store the tokenURI for the mint step
-        setResult({ tokenURI, imageUrl, txHash: "" })
+        setResult({ tokenURI, imageUrl, traitHash, txHash: "" })
         return
       }
 
-      // Already approved — go straight to mint
-      setResult({ tokenURI, imageUrl, txHash: "" })
-      executeMintWithUri(tokenURI)
+      setResult({ tokenURI, imageUrl, traitHash, txHash: "" })
+      executeMintWithUri(tokenURI, traitHash)
     } catch (err) {
       setStep("error")
       setError(err instanceof Error ? err.message : "Mint failed")
@@ -173,29 +264,27 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
   }
 
   function executeMint() {
-    if (result?.tokenURI) {
-      executeMintWithUri(result.tokenURI)
+    if (result?.tokenURI && result?.traitHash) {
+      executeMintWithUri(result.tokenURI, result.traitHash)
     }
   }
 
-  function executeMintWithUri(tokenURI: string) {
+  function executeMintWithUri(tokenURI: string, traitHash: `0x${string}`) {
     setStep("minting")
     try {
-      if (canUseWl) {
+      if (canMintWl) {
         writeMint({
           address: NFT_CONTRACT_ADDRESS,
           abi: SENTINEL_ABI,
           functionName: "mintWhitelist",
-          args: [proof, tokenURI],
-          gas: 21_000_000n,
+          args: [proof, tokenURI, traitHash],
         })
       } else {
         writeMint({
           address: NFT_CONTRACT_ADDRESS,
           abi: SENTINEL_ABI,
           functionName: "mintPublic",
-          args: [tokenURI],
-          gas: 21_000_000n,
+          args: [tokenURI, traitHash],
         })
       }
       setStep("confirming")
@@ -206,7 +295,15 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
     }
   }
 
-  // Update txHash when available
+  // Refetch counts after successful mint
+  useEffect(() => {
+    if (step === "done") {
+      refetchHumanMintCount()
+      refetchTotalSupply()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
   useEffect(() => {
     if (mintHash && result) {
       setResult((prev) => prev ? { ...prev, txHash: mintHash } : null)
@@ -216,8 +313,10 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
 
   const explorerUrl = process.env.NEXT_PUBLIC_EXPLORER_URL
 
+  const priceLabel = canMintWl ? "2 pathUSD (WL)" : "4 pathUSD"
   const stepLabels: Record<MintStep, string> = {
-    idle: canUseWl ? "Mint (WL — 5 pathUSD)" : "Mint (8 pathUSD)",
+    idle: `Mint — ${priceLabel}`,
+    signing: "Sign mint request in wallet...",
     preparing: "Uploading to Irys...",
     approving: "Approve pathUSD in wallet...",
     minting: "Confirm mint in wallet...",
@@ -227,6 +326,7 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
   }
 
   const isProcessing = step !== "idle" && step !== "done" && step !== "error"
+  const phaseMessage = getPhaseMessage()
 
   return (
     <Card>
@@ -234,10 +334,14 @@ export function MintButton({ traits }: { traits: TraitSelection }) {
         <CardTitle className="text-xs">Mint</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {phaseMessage && !canMint && (
+          <p className="text-sm text-yellow-500">{phaseMessage}</p>
+        )}
+
         <Button
           className="w-full"
           size="lg"
-          disabled={!isConnected || !hasRequiredTraits || isProcessing || approvePending || mintPending}
+          disabled={!isConnected || !hasRequiredTraits || !canMint || isProcessing || approvePending || mintPending || disabled}
           onClick={step === "done" || step === "error" ? () => setStep("idle") : handleMint}
         >
           {stepLabels[step]}

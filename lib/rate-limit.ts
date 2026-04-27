@@ -38,9 +38,43 @@ export function checkRateLimit(
   return { allowed: true, remaining: limit - entry.count, retryAfterMs: 0 }
 }
 
+/**
+ * Extract the real client IP from a request.
+ *
+ * Priority order (most trustworthy first):
+ *   1. `Render-Proxy-Forwarded-For`  — set by Render's edge, cannot be spoofed by client
+ *   2. `CF-Connecting-IP`             — set by Cloudflare if we're behind it
+ *   3. Last hop of `X-Forwarded-For`  — the last proxy in the chain appended this;
+ *                                       we deliberately DO NOT trust the first hop
+ *                                       (it's client-controlled and spoofable).
+ *   4. `X-Real-IP`                    — generic fallback
+ *
+ * Returns "unknown" if none match.
+ */
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for")
-  return forwarded?.split(",")[0]?.trim() || "unknown"
+  // 1. Render's edge header — most trustworthy in our production deploy
+  const renderFwd = req.headers.get("render-proxy-forwarded-for")
+  if (renderFwd) return renderFwd.split(",")[0]!.trim()
+
+  // 2. Cloudflare
+  const cf = req.headers.get("cf-connecting-ip")
+  if (cf) return cf.trim()
+
+  // 3. Last hop of X-Forwarded-For. The client controls the first value,
+  //    but each intermediate proxy APPENDS its own, so the LAST entry is
+  //    the closest trusted proxy IP. This is the opposite of the naive
+  //    "split(',')[0]" pattern.
+  const xff = req.headers.get("x-forwarded-for")
+  if (xff) {
+    const parts = xff.split(",").map(s => s.trim()).filter(Boolean)
+    if (parts.length > 0) return parts[parts.length - 1]!
+  }
+
+  // 4. Generic
+  const xri = req.headers.get("x-real-ip")
+  if (xri) return xri.trim()
+
+  return "unknown"
 }
 
 export function rateLimitResponse(retryAfterMs: number) {

@@ -1,3 +1,4 @@
+import { keccak256, toBytes } from "viem"
 import traitsConfig from "@/config/traits.json"
 
 export type Layer = typeof traitsConfig.layers[number]
@@ -53,7 +54,7 @@ export function getLayerFile(layerId: string, optionId: string): string | null {
 
 export function getTraitAttributes(selection: TraitSelection) {
   return traitsConfig.layers
-    .filter(layer => selection[layer.id] && selection[layer.id] !== `${layer.id}_none`)
+    .filter(layer => selection[layer.id])
     .map(layer => {
       const option = layer.options.find(o => o.id === selection[layer.id])
       return {
@@ -61,4 +62,24 @@ export function getTraitAttributes(selection: TraitSelection) {
         value: option?.name ?? selection[layer.id],
       }
     })
+}
+
+/**
+ * Deterministic keccak256 hash of a trait selection, returned as bytes32 hex.
+ *
+ * This is the SAME value that callers pass as the `traitHash` argument to
+ * `mintWhitelist` / `mintPublic` / `mintForAgent`. Computed identically on
+ * client and server so the server can check uniqueness off-chain before the
+ * contract enforces it on-chain.
+ *
+ * Canonical form: layers in catalog order; each non-empty selection is
+ * `"<layerId>:<optionId>"` joined by `"|"`.
+ */
+export function computeTraitHash(selection: TraitSelection): `0x${string}` {
+  const parts: string[] = []
+  for (const layer of traitsConfig.layers) {
+    const opt = selection[layer.id]
+    if (opt) parts.push(`${layer.id}:${opt}`)
+  }
+  return keccak256(toBytes(parts.join("|")))
 }

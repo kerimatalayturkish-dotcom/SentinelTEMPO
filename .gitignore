@@ -25,9 +25,11 @@
 *.pem
 *.bak
 photo_*.jpg
+password.txt
+password*.txt
 
 # local skill files (not served, keep private)
-/SKILL.md
+# /SKILL.md is committed — it's served at /skill for AI agents.
 /SKILL-QUEST.md
 public/sentineltemposkill.md
 
@@ -75,6 +77,12 @@ commandsVPS.md
 # temp scripts
 tmp_*.py
 scripts/monitor-*.ps1
+
+# Claude/Copilot local state (not for repo)
+.claude/
+
+# Irys probe JSON reports (transient diagnostics)
+scripts/irys-probe-*.json
 
 # vercel
 .vercel

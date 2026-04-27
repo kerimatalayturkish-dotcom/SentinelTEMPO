@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { CircuitBackground } from "@/components/CircuitBackground"
 import { SupplyCounter } from "@/components/SupplyCounter"
 import { PhaseIndicator } from "@/components/PhaseIndicator"
+import { WhitelistCheckWidget } from "@/components/WhitelistCheckWidget"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -23,14 +24,38 @@ const features = [
     icon: "🤖",
   },
   {
-    title: "6 Trait Layers",
-    desc: "Choose from backgrounds, bodies, heads, eyes, accessories, and color overlays.",
+    title: "7 Trait Layers",
+    desc: "Background, Back, Body, Mouth, Eyes, Eyewear, and Head Items — 130 unique traits.",
     icon: "🎨",
   },
   {
     title: "On-Chain Ownership",
     desc: "ERC-721 on Tempo. Your NFT, your wallet, verified on-chain forever.",
     icon: "⛓️",
+  },
+]
+
+const pricing = [
+  {
+    phase: "Whitelist",
+    price: "2",
+    desc: "Early supporters get first access",
+    badge: "WL",
+    highlight: false,
+  },
+  {
+    phase: "AI Agent",
+    price: "3",
+    desc: "Autonomous minting via MPP protocol",
+    badge: "AGENT",
+    highlight: true,
+  },
+  {
+    phase: "Public",
+    price: "4",
+    desc: "Open mint for everyone",
+    badge: "PUBLIC",
+    highlight: false,
   },
 ]
 
@@ -87,6 +112,16 @@ export default function Home() {
               </div>
             </div>
             <SupplyCounter />
+          </motion.div>
+
+          {/* Whitelist checker */}
+          <motion.div
+            className="mt-6 max-w-md mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45, duration: 0.6 }}
+          >
+            <WhitelistCheckWidget />
           </motion.div>
 
           {/* CTA */}
@@ -147,8 +182,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
               { step: "01", label: "Connect", desc: "Link your Tempo wallet" },
-              { step: "02", label: "Choose", desc: "Pick your 6 trait layers" },
-              { step: "03", label: "Pay", desc: "5-8 pathUSD auto-charged" },
+              { step: "02", label: "Choose", desc: "Pick from 7 trait layers" },
+              { step: "03", label: "Pay", desc: "2-4 pathUSD per phase" },
               { step: "04", label: "Own", desc: "NFT minted to your wallet" },
             ].map((s, i) => (
               <motion.div
@@ -161,6 +196,48 @@ export default function Home() {
                 <span className="text-lg font-bold text-sentinel/40">{s.step}</span>
                 <p className="text-[10px] font-bold text-foreground">{s.label}</p>
                 <p className="text-[8px] text-muted-foreground">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section className="container mx-auto max-w-6xl px-4 pb-20">
+          <motion.h2
+            className="font-pixel text-[10px] text-sentinel text-center mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.6 }}
+          >
+            MINT PRICING
+          </motion.h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {pricing.map((p, i) => (
+              <motion.div
+                key={p.phase}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.7 + i * 0.15, duration: 0.5 }}
+              >
+                <Card
+                  className={`sentinel-card h-full text-center ${
+                    p.highlight
+                      ? "border-sentinel/40 bg-sentinel/5"
+                      : "border-sentinel/10 bg-card/60"
+                  } backdrop-blur-sm`}
+                >
+                  <CardContent className="pt-6 px-5 pb-5 space-y-3">
+                    <span className="inline-block px-2 py-0.5 rounded text-[7px] font-bold tracking-wider bg-sentinel/10 text-sentinel border border-sentinel/20">
+                      {p.badge}
+                    </span>
+                    <div>
+                      <span className="font-pixel text-xl text-foreground">{p.price}</span>
+                      <span className="text-[9px] text-muted-foreground ml-1">pathUSD</span>
+                    </div>
+                    <p className="text-[10px] font-medium text-foreground">{p.phase}</p>
+                    <p className="text-[8px] text-muted-foreground leading-relaxed">{p.desc}</p>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>

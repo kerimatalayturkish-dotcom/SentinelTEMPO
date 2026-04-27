@@ -3,16 +3,22 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { useAccount } from "wagmi"
 
-const navLinks = [
+const baseNavLinks = [
   { href: "/", label: "Home" },
   { href: "/mint", label: "Mint" },
   { href: "/collection", label: "Collection" },
-  { href: "/quest", label: "Quest" },
+  { href: "/skill", label: "Mint Skill" },
 ]
 
 export function Header() {
   const pathname = usePathname()
+  const { isConnected } = useAccount()
+
+  const navLinks = isConnected
+    ? [...baseNavLinks, { href: "/my-mints", label: "My Mints" }]
+    : baseNavLinks
 
   return (
     <header className="sticky top-0 z-50 border-b border-sentinel/20 bg-background/80 backdrop-blur-md">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
+import { fetchJson } from "@/lib/fetch-json"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,6 +18,7 @@ interface NFTItem {
 interface CollectionResponse {
   items: NFTItem[]
   total: number
+  maxSupply: number
   page: number
   limit: number
   totalPages: number
@@ -33,9 +35,7 @@ export function CollectionGrid() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/nft/collection?page=${p}&limit=${limit}`)
-      if (!res.ok) throw new Error("Failed to load collection")
-      const json: CollectionResponse = await res.json()
+      const json = await fetchJson<CollectionResponse>(`/api/nft/collection?page=${p}&limit=${limit}`)
       setData(json)
       setPage(p)
     } catch (err) {
@@ -67,16 +67,16 @@ export function CollectionGrid() {
         <div className="space-y-2">
           <div className="flex justify-between text-[8px] text-muted-foreground">
             <span>{data.total.toLocaleString()} minted</span>
-            <span>{(10_000 - data.total).toLocaleString()} remaining</span>
+            <span>{(data.maxSupply - data.total).toLocaleString()} remaining</span>
           </div>
           <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${(data.total / 10_000) * 100}%` }}
+              style={{ width: `${(data.total / data.maxSupply) * 100}%` }}
             />
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            {((data.total / 10_000) * 100).toFixed(2)}% minted
+            {((data.total / data.maxSupply) * 100).toFixed(2)}% minted
           </p>
         </div>
       )}

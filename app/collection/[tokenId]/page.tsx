@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { fetchJson } from "@/lib/fetch-json"
 
 interface NFTDetail {
   tokenId: number
@@ -16,6 +17,7 @@ interface NFTDetail {
   attributes: { trait_type: string; value: string }[]
   owner: string
   tokenURI: string
+  mintTxHash: string | null
 }
 
 export default function NFTDetailPage() {
@@ -27,12 +29,8 @@ export default function NFTDetailPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/nft/collection/${tokenId}`)
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          throw new Error(body.error || `HTTP ${res.status}`)
-        }
-        setNft(await res.json())
+        const data = await fetchJson<NFTDetail>(`/api/nft/collection/${tokenId}`)
+        setNft(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load")
       } finally {
@@ -151,13 +149,15 @@ export default function NFTDetailPage() {
                 <Button variant="outline" size="sm">Image ↗</Button>
               </a>
             )}
-            <a
-              href={`${explorerUrl}/token/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}/instance/${nft.tokenId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" size="sm">Explorer ↗</Button>
-            </a>
+            {nft.mintTxHash && (
+              <a
+                href={`${explorerUrl}/tx/${nft.mintTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline" size="sm">Mint TX ↗</Button>
+              </a>
+            )}
           </div>
         </div>
       </div>

@@ -18,13 +18,21 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(50, Math.max(1, Number(request.nextUrl.searchParams.get("limit") || "20")))
 
   try {
-    const totalSupply = await publicClient.readContract({
-      address: NFT_CONTRACT_ADDRESS,
-      abi: SENTINEL_ABI,
-      functionName: "totalSupply",
-    })
+    const [totalSupply, maxSupply] = await Promise.all([
+      publicClient.readContract({
+        address: NFT_CONTRACT_ADDRESS,
+        abi: SENTINEL_ABI,
+        functionName: "totalSupply",
+      }),
+      publicClient.readContract({
+        address: NFT_CONTRACT_ADDRESS,
+        abi: SENTINEL_ABI,
+        functionName: "MAX_SUPPLY",
+      }),
+    ])
 
     const total = Number(totalSupply)
+    const max = Number(maxSupply)
     const start = (page - 1) * limit
     const end = Math.min(start + limit, total)
 
@@ -32,6 +40,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         items: [],
         total,
+        maxSupply: max,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
@@ -92,6 +101,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       items,
       total,
+      maxSupply: max,
       page,
       limit,
       totalPages: Math.ceil(total / limit),

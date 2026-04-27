@@ -4,6 +4,7 @@ import { Press_Start_2P } from "next/font/google";
 import { Providers } from "./providers";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { MusicPlayer } from "@/components/MusicPlayer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,6 +43,7 @@ export default function RootLayout({
           <Header />
           <div className="flex-1">{children}</div>
           <Footer />
+          <MusicPlayer />
         </Providers>
       </body>
     </html>
