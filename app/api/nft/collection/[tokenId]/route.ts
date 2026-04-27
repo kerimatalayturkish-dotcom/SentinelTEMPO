@@ -95,12 +95,18 @@ export async function GET(
       }
     }
 
-    let metadata = null
-    try {
-      const res = await fetch(tokenURI as string, { next: { revalidate: 3600 } })
-      if (res.ok) metadata = await res.json()
-    } catch {
-      // metadata fetch failed
+    // Bypass Next's fetch cache so a transient Irys hiccup isn't pinned for an
+    // hour as a permanent miss. Retry once if the first attempt yields no image.
+    const fetchMetadata = async () => {
+      try {
+        const res = await fetch(tokenURI as string, { cache: "no-store" })
+        if (res.ok) return await res.json()
+      } catch {}
+      return null
+    }
+    let metadata = await fetchMetadata()
+    if (!metadata?.image) {
+      metadata = (await fetchMetadata()) || metadata
     }
 
     return NextResponse.json({
