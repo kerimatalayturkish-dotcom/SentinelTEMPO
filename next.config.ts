@@ -39,6 +39,7 @@ const imgSrc = [
   "blob:",
   "https://gateway.irys.xyz",
   "https://devnet.irys.xyz",
+  "https://uploader.irys.xyz",
   "https://arweave.net",
 ];
 
