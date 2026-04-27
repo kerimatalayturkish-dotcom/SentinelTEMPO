@@ -147,18 +147,18 @@ echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"
 
 > `0xYOUR_AGENT_WALLET` is the address derived from your `MPPX_PRIVATE_KEY`. The mint server enforces `payer === recipient`; using a different address triggers an automatic refund and 403.
 
-**Step 2 — Call mppx (same on all platforms):**
+**Step 2 — Call mppx (same on all platforms, Windows-safe):**
 ```bash
-npx mppx -s -r https://rpc.tempo.xyz -X POST -H "Content-Type: application/json" -d @mint-body.json https://sentineltempo.onrender.com/api/nft/mint
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=@mint-body.json https://sentineltempo.onrender.com/api/nft/mint
 ```
 
 > **IMPORTANT:** `npx mppx` handles the HTTP 402 payment challenge automatically. Never use plain `curl` for the mint endpoint — it will just return a 402 error.
 >
-> **CRITICAL:** Always include `-r https://rpc.tempo.xyz` so mppx uses the correct Tempo mainnet RPC. Without it, mppx may default to a different RPC and report 0 balance even if the wallet is funded.
+> **CRITICAL:** Always include `--rpc-url=https://rpc.tempo.xyz` so mppx uses the correct Tempo mainnet RPC. Without it, mppx may default to a different RPC and report 0 balance even if the wallet is funded.
 >
 > **SETUP:** You must have `MPPX_PRIVATE_KEY` set in your environment before calling mppx. See "Agent Wallet Setup" above.
 >
-> **SHELL QUOTING WARNING:** Do NOT use `-J` with inline JSON on Windows — the shell strips quotes. On Linux/macOS you can use inline JSON with single quotes (`-d '{"key":"value"}'`), but the file approach works everywhere.
+> **WHY `--flag=value` (with `=`) AND `--json-body`?** On Windows, `-H "Content-Type: application/json"` and `-X POST` get mangled by shell argument parsing — the agent ends up trying to resolve `application` as a hostname and gets `DNS_ERROR`. Using `--json-body=@file.json` (= `-J @file.json`) is the bulletproof form: it reads the body from the file, automatically sets `Content-Type: application/json`, and implies POST. No `-H`, no `-X`, no quoting traps.
 
 ---
 
@@ -338,7 +338,7 @@ This is the paid endpoint. Cost depends on phase:
 - `recipient` — the wallet address that will own the minted NFT. **Must equal the wallet address derived from `MPPX_PRIVATE_KEY`.** The server verifies the on-chain payment `tx.from` against this field; mismatch → 403 + automatic refund.
 - Trait combination must be unique (not previously minted)
 
-**Full mint command (Windows) — use file-based JSON:**
+**Full mint command (Windows-safe, also works on macOS/Linux):**
 
 Step 1 — Write body to file:
 ```cmd
@@ -347,10 +347,10 @@ echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"
 
 Step 2 — Mint:
 ```bash
-npx mppx -s -r https://rpc.tempo.xyz -X POST -H "Content-Type: application/json" -d @mint-body.json https://sentineltempo.onrender.com/api/nft/mint
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=@mint-body.json https://sentineltempo.onrender.com/api/nft/mint
 ```
 
-> **DO NOT use `-J` with inline JSON on Windows.** The shell strips quotes and the server receives invalid JSON. Always use `-d @file.json`.
+> **Use `--json-body=@file.json` (= `-J @file.json`).** It auto-sets `Content-Type: application/json` and implies POST. Do NOT add `-H "Content-Type: application/json"` or `-X POST` — on Windows those flags get split by shell tokenization and you get `DNS_ERROR: Could not resolve host "application"`.
 
 **Success response:**
 ```json
@@ -426,9 +426,9 @@ Write body to file:
 echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"} > mint-body.json
 ```
 
-Then mint:
+Then mint (Windows-safe form — also works on macOS/Linux):
 ```bash
-npx mppx -s -r https://rpc.tempo.xyz -X POST -H "Content-Type: application/json" -d @mint-body.json https://sentineltempo.onrender.com/api/nft/mint
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=@mint-body.json https://sentineltempo.onrender.com/api/nft/mint
 ```
 
 **Step 7 — Report result:**
