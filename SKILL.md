@@ -147,9 +147,20 @@ echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"
 
 > `0xYOUR_AGENT_WALLET` is the address derived from your `MPPX_PRIVATE_KEY`. The mint server enforces `payer === recipient`; using a different address triggers an automatic refund and 403.
 
-**Step 2 — Call mppx (same on all platforms, Windows-safe):**
+**Step 2 — Read the file into a variable, then pass it inline to mppx:**
+
+> ⚠️ **mppx does NOT expand `@file` syntax.** That's a curl-ism. mppx's `--data` and `--json-body` flags pass the string verbatim as the request body. You must read the file into a shell variable first.
+
+Linux/macOS:
 ```bash
-npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=@mint-body.json https://sentineltempo.onrender.com/api/nft/mint
+BODY="$(cat mint-body.json)"
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body="$BODY" https://sentineltempo.onrender.com/api/nft/mint
+```
+
+Windows (PowerShell):
+```powershell
+$body = Get-Content -Raw .\mint-body.json
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=$body https://sentineltempo.onrender.com/api/nft/mint
 ```
 
 > **IMPORTANT:** `npx mppx` handles the HTTP 402 payment challenge automatically. Never use plain `curl` for the mint endpoint — it will just return a 402 error.
@@ -158,7 +169,9 @@ npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=@mint-body.json ht
 >
 > **SETUP:** You must have `MPPX_PRIVATE_KEY` set in your environment before calling mppx. See "Agent Wallet Setup" above.
 >
-> **WHY `--flag=value` (with `=`) AND `--json-body`?** On Windows, `-H "Content-Type: application/json"` and `-X POST` get mangled by shell argument parsing — the agent ends up trying to resolve `application` as a hostname and gets `DNS_ERROR`. Using `--json-body=@file.json` (= `-J @file.json`) is the bulletproof form: it reads the body from the file, automatically sets `Content-Type: application/json`, and implies POST. No `-H`, no `-X`, no quoting traps.
+> **WHY `--json-body=$body` (with `=`)?** Two reasons:
+> 1. `--json-body` (= `-J`) auto-sets `Content-Type: application/json` and implies POST — so you do NOT need `-H "Content-Type: application/json"` or `-X POST`. On Windows those flags get split by shell tokenization and the agent ends up trying to resolve `application` as a hostname (`DNS_ERROR`).
+> 2. The `=` form (`--flag=value` instead of `--flag value`) keeps the JSON body as a single argument across all shells, even when it contains colons and spaces.
 
 ---
 
@@ -340,17 +353,24 @@ This is the paid endpoint. Cost depends on phase:
 
 **Full mint command (Windows-safe, also works on macOS/Linux):**
 
-Step 1 — Write body to file:
-```cmd
-echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"} > mint-body.json
+Step 1 — Write body to file (PowerShell):
+```powershell
+'{"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"}' | Out-File -Encoding utf8 mint-body.json
 ```
 
-Step 2 — Mint:
+Step 2 — Read the file and mint (PowerShell):
+```powershell
+$body = Get-Content -Raw .\mint-body.json
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=$body https://sentineltempo.onrender.com/api/nft/mint
+```
+
+Linux/macOS equivalent:
 ```bash
-npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=@mint-body.json https://sentineltempo.onrender.com/api/nft/mint
+BODY="$(cat mint-body.json)"
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body="$BODY" https://sentineltempo.onrender.com/api/nft/mint
 ```
 
-> **Use `--json-body=@file.json` (= `-J @file.json`).** It auto-sets `Content-Type: application/json` and implies POST. Do NOT add `-H "Content-Type: application/json"` or `-X POST` — on Windows those flags get split by shell tokenization and you get `DNS_ERROR: Could not resolve host "application"`.
+> **mppx does NOT expand `@file`.** Read the file into a variable first. `--json-body` (= `-J`) auto-sets `Content-Type: application/json` and implies POST — do NOT add `-H "Content-Type: application/json"` or `-X POST` (Windows splits those at the space and you get `DNS_ERROR: Could not resolve host "application"`).
 
 **Success response:**
 ```json
@@ -421,15 +441,24 @@ If `unique: false`, change one or more traits and retry.
 
 **Step 6 — Mint:**
 
-Write body to file:
-```cmd
-echo {"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"} > mint-body.json
+Write body to file (PowerShell):
+```powershell
+'{"traits":{"background":"circuit_sky","body":"og_tempo_blue","eyes":"tempo"},"recipient":"0xYOUR_AGENT_WALLET"}' | Out-File -Encoding utf8 mint-body.json
 ```
 
-Then mint (Windows-safe form — also works on macOS/Linux):
-```bash
-npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=@mint-body.json https://sentineltempo.onrender.com/api/nft/mint
+Read the file and mint (PowerShell):
+```powershell
+$body = Get-Content -Raw .\mint-body.json
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body=$body https://sentineltempo.onrender.com/api/nft/mint
 ```
+
+Linux/macOS:
+```bash
+BODY="$(cat mint-body.json)"
+npx mppx --silent --rpc-url=https://rpc.tempo.xyz --json-body="$BODY" https://sentineltempo.onrender.com/api/nft/mint
+```
+
+> **mppx does NOT expand `@file`** — you must read the file into a variable first. `--json-body` (= `-J`) auto-sets `Content-Type: application/json` and implies POST.
 
 **Step 7 — Report result:**
 Share the `tokenId`, `imageUrl`, and `txHash` with the user. The TX can be inspected on the explorer:
