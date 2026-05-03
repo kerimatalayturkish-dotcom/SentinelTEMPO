@@ -4,6 +4,7 @@ import { tempoChain, NFT_CONTRACT_ADDRESS } from "@/lib/chain"
 import { SENTINEL_ABI } from "@/lib/contract"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { serverHttp } from "@/lib/server-rpc"
+import { safeFetchTokenMetadata } from "@/lib/safe-fetch"
 
 const publicClient = createPublicClient({
   chain: tempoChain,
@@ -69,14 +70,8 @@ export async function GET(request: NextRequest) {
             }),
           ])
 
-          // Fetch metadata from Irys
-          let metadata = null
-          try {
-            const res = await fetch(tokenURI as string, { next: { revalidate: 3600 } })
-            if (res.ok) metadata = await res.json()
-          } catch {
-            // metadata fetch failed, continue with null
-          }
+          // Fetch metadata from Irys (SSRF-safe: scheme + host allowlist + timeout)
+          const metadata = await safeFetchTokenMetadata(tokenURI as string)
 
           return {
             tokenId,

@@ -44,40 +44,6 @@ function gatewayUrl(id: string): string {
   return `${base}/${id}`
 }
 
-export async function uploadImage(imageBuffer: Buffer): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const irys = (await getIrysUploader()) as any
-
-  const receipt = await irys.upload(imageBuffer, {
-    tags: [
-      { name: "Content-Type", value: "image/png" },
-      { name: "App-Name", value: "SentinelTEMPO" },
-    ],
-  })
-
-  return gatewayUrl(receipt.id)
-}
-
-export async function uploadMetadata(metadata: {
-  name: string
-  description: string
-  image: string
-  attributes: { trait_type: string; value: string }[]
-  traitHash?: string
-}): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const irys = (await getIrysUploader()) as any
-
-  const receipt = await irys.upload(JSON.stringify(metadata), {
-    tags: [
-      { name: "Content-Type", value: "application/json" },
-      { name: "App-Name", value: "SentinelTEMPO" },
-    ],
-  })
-
-  return gatewayUrl(receipt.id)
-}
-
 // ─── Funding helpers (admin-only) ───────────────────────────────
 // Irys uploads draw from a pre-funded balance attached to the uploader's
 // wallet. These helpers expose the current balance and a top-up call so

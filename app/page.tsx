@@ -2,12 +2,12 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { useEffect, useState } from "react"
+import { useAccount } from "wagmi"
 import { CircuitBackground } from "@/components/CircuitBackground"
-import { SupplyCounter } from "@/components/SupplyCounter"
-import { PhaseIndicator } from "@/components/PhaseIndicator"
-import { WhitelistCheckWidget } from "@/components/WhitelistCheckWidget"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { CountCycle } from "@/components/CountCycle"
 
 const codeSnippets = [
   { code: "exec(agent_001);", x: "5%", y: "18%", delay: 0 },
@@ -17,56 +17,99 @@ const codeSnippets = [
   { code: "// network_context", x: "6%", y: "75%", delay: 1.6 },
 ]
 
-const features = [
-  {
-    title: "AI Agent Minting",
-    desc: "Agents pay via MPP (HTTP 402) and mint autonomously — no wallet popups needed.",
-    icon: "🤖",
-  },
-  {
-    title: "7 Trait Layers",
-    desc: "Background, Back, Body, Mouth, Eyes, Eyewear, and Head Items — 130 unique traits.",
-    icon: "🎨",
-  },
-  {
-    title: "On-Chain Ownership",
-    desc: "ERC-721 on Tempo. Your NFT, your wallet, verified on-chain forever.",
-    icon: "⛓️",
-  },
-]
-
-const pricing = [
-  {
-    phase: "Whitelist",
-    price: "2",
-    desc: "Early supporters get first access",
-    badge: "WL",
-    highlight: false,
-  },
-  {
-    phase: "AI Agent",
-    price: "3",
-    desc: "Autonomous minting via MPP protocol",
-    badge: "AGENT",
-    highlight: true,
-  },
-  {
-    phase: "Public",
-    price: "4",
-    desc: "Open mint for everyone",
-    badge: "PUBLIC",
-    highlight: false,
-  },
-]
-
 export default function Home() {
+  const { address, isConnected } = useAccount()
+  const [isHolder, setIsHolder] = useState(false)
+
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setIsHolder(false)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/nft/my-holdings?address=${address}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d && typeof d.count === "number") setIsHolder(d.count > 0)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [address, isConnected])
+
+  const features: {
+    title: string
+    desc: React.ReactNode
+    icon: string
+    extra?: React.ReactNode
+  }[] = [
+    {
+      title: "Train Your AI Agent",
+      desc: "We created a skill file that fully trains your agent to behave and interact like a Sentinel.",
+      icon: "\uD83E\uDDE0",
+      extra: isHolder ? (
+        <Link
+          href="/train"
+          className="inline-block mt-4 text-[10px] sm:text-[11px] font-pixel tracking-wider text-sentinel hover:underline"
+        >
+          OPEN TRAINING PORTAL \u2192
+        </Link>
+      ) : null,
+    },
+    {
+      title: "Forever On Chain",
+      desc: (
+        <>
+          Your agent lives forever on{" "}
+          <a
+            href="https://docs.tempo.xyz/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sentinel hover:underline"
+          >
+            TEMPO
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://docs.irys.xyz/foundations/introduction"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sentinel hover:underline"
+          >
+            IRYS
+          </a>
+          .
+        </>
+      ),
+      icon: "\u267E\uFE0F",
+    },
+    {
+      title: "Meet Sentinel #0",
+      desc: (
+        <>
+          The first trained Sentinel using the training method we introduced.{" "}
+          <a
+            href="https://x.com/sentinel_num_0"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sentinel hover:underline"
+          >
+            Find it on X \u2192
+          </a>
+        </>
+      ),
+      icon: "\uD83D\uDC41\uFE0F",
+    },
+  ]
+
   return (
     <>
       <CircuitBackground />
 
       <main className="relative z-10">
         {/* Hero */}
-        <section className="container mx-auto max-w-6xl px-4 pt-20 pb-16 text-center">
+        <section className="container mx-auto max-w-6xl px-4 pt-12 sm:pt-20 pb-12 sm:pb-16 text-center">
           {/* Floating code snippets */}
           {codeSnippets.map((s, i) => (
             <motion.div
@@ -95,55 +138,33 @@ export default function Home() {
             <p className="font-pixel text-[7px] sm:text-[9px] text-muted-foreground mt-3 tracking-widest">
               FIRST AGENTIC COLLECTION ON TEMPO CHAIN
             </p>
-          </motion.div>
-
-          {/* Status panel */}
-          <motion.div
-            className="mt-10 max-w-md mx-auto space-y-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            <div className="flex items-center justify-center gap-3">
-              <PhaseIndicator />
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-muted/50 border border-status-live/20">
-                <span className="w-2 h-2 rounded-full bg-status-live animate-pulse" />
-                <span className="text-[8px] text-status-live font-bold">LIVE</span>
-              </div>
-            </div>
-            <SupplyCounter />
-          </motion.div>
-
-          {/* Whitelist checker */}
-          <motion.div
-            className="mt-6 max-w-md mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, duration: 0.6 }}
-          >
-            <WhitelistCheckWidget />
+            <p className="font-pixel text-[7px] sm:text-[9px] text-white mt-2 tracking-widest">
+              TOTAL SUPPLY = <span className="text-sentinel"><CountCycle target={1707} /></span>
+            </p>
           </motion.div>
 
           {/* CTA */}
           <motion.div
-            className="mt-10 flex items-center justify-center gap-4"
+            className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-xs sm:max-w-none mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <Link href="/mint">
-              <Button
-                size="lg"
-                className="bg-sentinel hover:bg-sentinel/90 text-white font-pixel text-[9px] px-8 py-6 animate-pulse-glow"
-              >
-                MINT NOW
-              </Button>
-            </Link>
-            <Link href="/collection">
-              <Button variant="outline" size="lg" className="border-sentinel/30 hover:bg-sentinel/10 text-[9px] px-6 py-6">
+            <Link href="/collection" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto border-sentinel/30 hover:bg-sentinel/10 text-[9px] px-6 py-5 sm:py-6">
                 View Collection
               </Button>
             </Link>
+            <a
+              href="https://www.stablewhel.xyz/collection/4217/0x8dbcd5627cDaAF11911f5E9F26eDB4eAea3F8b70"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-trace inline-block w-full sm:w-auto"
+            >
+              <Button size="lg" className="w-full sm:w-auto bg-black text-sentinel hover:bg-sentinel/10 hover:text-sentinel border-0 text-[9px] px-6 py-5 sm:py-6">
+                Buy a Sentinel
+              </Button>
+            </a>
           </motion.div>
         </section>
 
@@ -158,84 +179,15 @@ export default function Home() {
                 transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
               >
                 <Card className="sentinel-card border-sentinel/10 bg-card/60 backdrop-blur-sm h-full">
-                  <CardContent className="pt-6 px-5 pb-5">
-                    <span className="text-2xl">{f.icon}</span>
-                    <h3 className="text-[10px] font-bold mt-3 text-foreground">{f.title}</h3>
-                    <p className="text-[8px] text-muted-foreground mt-2 leading-relaxed">{f.desc}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* How it works */}
-        <section className="container mx-auto max-w-6xl px-4 pb-20">
-          <motion.h2
-            className="font-pixel text-[10px] text-sentinel text-center mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2 }}
-          >
-            HOW IT WORKS
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {[
-              { step: "01", label: "Connect", desc: "Link your Tempo wallet" },
-              { step: "02", label: "Choose", desc: "Pick from 7 trait layers" },
-              { step: "03", label: "Pay", desc: "2-4 pathUSD per phase" },
-              { step: "04", label: "Own", desc: "NFT minted to your wallet" },
-            ].map((s, i) => (
-              <motion.div
-                key={s.step}
-                className="text-center space-y-2"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.3 + i * 0.1, duration: 0.4 }}
-              >
-                <span className="text-lg font-bold text-sentinel/40">{s.step}</span>
-                <p className="text-[10px] font-bold text-foreground">{s.label}</p>
-                <p className="text-[8px] text-muted-foreground">{s.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Pricing */}
-        <section className="container mx-auto max-w-6xl px-4 pb-20">
-          <motion.h2
-            className="font-pixel text-[10px] text-sentinel text-center mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.6 }}
-          >
-            MINT PRICING
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            {pricing.map((p, i) => (
-              <motion.div
-                key={p.phase}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.7 + i * 0.15, duration: 0.5 }}
-              >
-                <Card
-                  className={`sentinel-card h-full text-center ${
-                    p.highlight
-                      ? "border-sentinel/40 bg-sentinel/5"
-                      : "border-sentinel/10 bg-card/60"
-                  } backdrop-blur-sm`}
-                >
-                  <CardContent className="pt-6 px-5 pb-5 space-y-3">
-                    <span className="inline-block px-2 py-0.5 rounded text-[7px] font-bold tracking-wider bg-sentinel/10 text-sentinel border border-sentinel/20">
-                      {p.badge}
-                    </span>
-                    <div>
-                      <span className="font-pixel text-xl text-foreground">{p.price}</span>
-                      <span className="text-[9px] text-muted-foreground ml-1">pathUSD</span>
-                    </div>
-                    <p className="text-[10px] font-medium text-foreground">{p.phase}</p>
-                    <p className="text-[8px] text-muted-foreground leading-relaxed">{p.desc}</p>
+                  <CardContent className="pt-7 px-6 pb-6 sm:pt-8 sm:px-7 sm:pb-7">
+                    <span className="text-3xl sm:text-4xl">{f.icon}</span>
+                    <h3 className="text-xs sm:text-sm font-bold mt-4 text-foreground leading-snug break-words">
+                      {f.title}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground mt-3 leading-relaxed break-words">
+                      {f.desc}
+                    </p>
+                    {f.extra}
                   </CardContent>
                 </Card>
               </motion.div>

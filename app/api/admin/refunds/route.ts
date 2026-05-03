@@ -7,13 +7,17 @@ export async function GET(request: NextRequest) {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const url = new URL(request.url)
-  const filter = url.searchParams.get("filter") ?? "unsettled"
+  const filterRaw = url.searchParams.get("filter") ?? "unsettled"
+  // Strict allowlist — never interpolate user input into SQL.
+  const FILTERS: Record<string, string> = {
+    unsettled: "WHERE settled = false",
+    settled: "WHERE settled = true",
+    all: "",
+  }
+  const where = Object.prototype.hasOwnProperty.call(FILTERS, filterRaw)
+    ? FILTERS[filterRaw]
+    : FILTERS.unsettled
   const limit = Math.min(Number(url.searchParams.get("limit") ?? 100), 500)
-
-  let where = ""
-  if (filter === "unsettled") where = "WHERE settled = false"
-  else if (filter === "settled") where = "WHERE settled = true"
-  // filter=all → no where clause
 
   try {
     const result = await pool.query(

@@ -71,12 +71,12 @@ export default function NFTDetailPage() {
   const explorerUrl = process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explore.tempo.xyz"
 
   return (
-    <main className="container mx-auto max-w-4xl p-6">
-      <Link href="/collection" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
+    <main className="container mx-auto max-w-4xl p-4 sm:p-6">
+      <Link href="/collection" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
         ← Back to Collection
       </Link>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mt-4">
         {/* Image */}
         <div className="rounded-xl overflow-hidden ring-1 ring-foreground/10">
           {nft.image ? (

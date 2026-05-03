@@ -62,28 +62,9 @@ export function CollectionGrid() {
 
   return (
     <div className="space-y-6">
-      {/* Progress bar */}
-      {data && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-[8px] text-muted-foreground">
-            <span>{data.total.toLocaleString()} minted</span>
-            <span>{(data.maxSupply - data.total).toLocaleString()} remaining</span>
-          </div>
-          <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${(data.total / data.maxSupply) * 100}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground text-center">
-            {((data.total / data.maxSupply) * 100).toFixed(2)}% minted
-          </p>
-        </div>
-      )}
-
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i} size="sm">
               <Skeleton className="aspect-square w-full rounded-t-xl" />
@@ -95,7 +76,7 @@ export function CollectionGrid() {
           ))}
         </div>
       ) : data && data.items.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {data.items.map((nft) => (
             <Link key={nft.tokenId} href={`/collection/${nft.tokenId}`}>
               <Card size="sm" className="hover:ring-primary/40 transition-all cursor-pointer">
@@ -126,9 +107,6 @@ export function CollectionGrid() {
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No NFTs minted yet.</p>
-          <Link href="/mint">
-            <Button className="mt-4">Mint the first one</Button>
-          </Link>
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { SENTINEL_ABI } from "@/lib/contract"
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { getMintReceipt } from "@/lib/receipts"
 import { serverHttp } from "@/lib/server-rpc"
+import { safeFetchTokenMetadata } from "@/lib/safe-fetch"
 
 const publicClient = createPublicClient({
   chain: tempoChain,
@@ -96,13 +97,8 @@ export async function GET(
       }
     }
 
-    let metadata = null
-    try {
-      const res = await fetch(tokenURI as string, { next: { revalidate: 3600 } })
-      if (res.ok) metadata = await res.json()
-    } catch {
-      // metadata fetch failed
-    }
+    // SSRF-safe: scheme + host allowlist + timeout + size cap
+    const metadata = await safeFetchTokenMetadata(tokenURI as string)
 
     return NextResponse.json({
       tokenId,
