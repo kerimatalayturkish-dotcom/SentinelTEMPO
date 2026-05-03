@@ -61,11 +61,17 @@ export async function safeFetchTokenMetadata(
       signal: controller.signal,
       // Cache as the caller asks (defaults to 1h to match prior behaviour).
       next: { revalidate: opts.revalidate ?? 3600 },
-      // Defensive: never send credentials/cookies to a third-party host.
-      redirect: "error",
+      // Follow redirects, but defensively re-validate the final URL host
+      // below. Irys gateways routinely 302-redirect between gateway.irys.xyz
+      // and uploader.irys.xyz, so refusing redirects breaks metadata loads.
+      redirect: "follow",
       headers: { Accept: "application/json" },
     })
     if (!res.ok) return null
+
+    // Defense-in-depth: confirm the URL we ended up at is still allowlisted
+    // (in case the redirect chain pointed off-allowlist).
+    if (!isAllowedUrl(res.url)) return null
 
     // Cap response body size.
     const contentLength = Number(res.headers.get("content-length") || "0")
